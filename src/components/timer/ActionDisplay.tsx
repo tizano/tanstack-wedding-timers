@@ -1,129 +1,139 @@
-import { type TimerAction } from "@/lib/db/schema/timer";
+import { type TimerAction } from "@/lib/db/schema/timer.schema";
 import { cn } from "@/lib/utils";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import {
+  AudioAction,
+  GalleryAction,
+  ImageAction,
+  ImageWithSound,
+  VideoAction,
+} from "./actions";
 
 interface ActionDisplayProps {
-  action: TimerAction;
+  currentAction: TimerAction;
+  actions: TimerAction[];
   onComplete?: () => void;
 }
 
-const ActionDisplay = ({ action, onComplete }: ActionDisplayProps) => {
-  const [mediaEnded, setMediaEnded] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+/**
+ * Composant principal qui dispatche l'affichage des currentActions aux composants enfants appropriés.
+ * Gère l'overlay et la disposition générale, puis délègue le rendu spécifique à chaque type d'currentAction.
+ */
+const ActionDisplay = ({ currentAction, actions }: ActionDisplayProps) => {
+  const [isHidden, setIsHidden] = useState(false);
 
-  useEffect(() => {
-    // Gérer le displayDuration après la fin du média
-    if (mediaEnded && action.displayDurationSec) {
-      const timer = setTimeout(() => {
-        onComplete?.();
-      }, action.displayDurationSec * 1000);
+  /**
+   * Vérifie s'il y a une action IMAGE avant une action SOUND dans le tableau d'actions.
+   * Compare les orderIndex pour déterminer l'ordre des actions.
+   */
+  const hasImageBeforeSound = (currentSoundAction: TimerAction): boolean => {
+    // Trouve toutes les actions IMAGE qui ont un orderIndex inférieur à l'action SOUND actuelle
+    const imageActions = actions.filter(
+      (action) =>
+        action.type === "IMAGE" && action.orderIndex < currentSoundAction.orderIndex,
+    );
 
-      return () => clearTimeout(timer);
-    } else if (mediaEnded && !action.displayDurationSec) {
-      onComplete?.();
-    }
-  }, [mediaEnded, action.displayDurationSec, onComplete]);
+    // Retourne true s'il y a au moins une action IMAGE avant cette action SOUND
+    return imageActions.length > 0;
+  };
 
-  const handleVideoEnd = () => setMediaEnded(true);
-  const handleAudioEnd = () => setMediaEnded(true);
+  const onComplete = () => {
+    console.log(`Action ${currentAction.id} of type ${currentAction.type} completed.`);
+    setIsHidden(true);
+    // Ici, vous pouvez implémenter la logique après la complétion de l'currentAction,
+    // par exemple en appelant une mutation ou en mettant à jour l'état.
+  };
 
-  // Pour les images et galeries, considérer comme "terminé" immédiatement
-  useEffect(() => {
-    if (action.type === "IMAGE" || action.type === "GALLERY") {
-      setMediaEnded(true);
-    }
-  }, [action.type]);
-
-  const renderContent = () => {
-    switch (action.type) {
+  const renderActionContent = () => {
+    switch (currentAction.type) {
       case "VIDEO":
-        return (
-          <video
-            ref={videoRef}
-            src={action.url || ""}
-            autoPlay
-            controls
-            onEnded={handleVideoEnd}
-            className="max-h-[60vh] max-w-full rounded-lg"
-          />
-        );
+        return <VideoAction action={currentAction} onComplete={onComplete} />;
 
       case "SOUND":
+        // Vérifier s'il y a une action IMAGE avant cette action SOUND
+        if (hasImageBeforeSound(currentAction)) {
+          // Trouve la dernière action IMAGE avant cette action SOUND
+          const previousImageAction = actions
+            .filter(
+              (action) =>
+                action.type === "IMAGE" && action.orderIndex < currentAction.orderIndex,
+            )
+            .sort((a, b) => b.orderIndex - a.orderIndex)[0];
+
+          if (previousImageAction?.url) {
+            return (
+              <ImageWithSound
+                imageUrl={previousImageAction.url}
+                soundUrl={currentAction.url || ""}
+                title={currentAction.title || undefined}
+                onComplete={onComplete}
+              />
+            );
+          }
+        }
+
         return (
-          <div className="flex flex-col items-center gap-4">
-            <audio
-              ref={audioRef}
-              src={action.url || ""}
-              autoPlay
-              controls
-              onEnded={handleAudioEnd}
-              className="w-full max-w-md"
-            />
-            <div className="text-center">
-              <div className="text-2xl font-bold">{action.title}</div>
-            </div>
-          </div>
+          <AudioAction
+            url={currentAction.url || ""}
+            title={currentAction.title || undefined}
+            displayDurationSec={currentAction.displayDurationSec || undefined}
+            onComplete={onComplete}
+          />
         );
 
       case "IMAGE":
         return (
-          <img
-            src={action.url || ""}
-            alt={action.title || "Action image"}
-            className="max-h-[60vh] max-w-full rounded-lg"
+          <ImageAction
+            url={currentAction.url || ""}
+            title={currentAction.title || undefined}
+            displayDurationSec={currentAction.displayDurationSec || undefined}
+            onComplete={onComplete}
           />
         );
 
       case "GALLERY":
         return (
-          <div className="relative">
-            <img
-              src={action.urls[currentImageIndex]}
-              alt={`Gallery ${currentImageIndex + 1}`}
-              className="max-h-[60vh] max-w-full rounded-lg"
-            />
-            <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 transform gap-2">
-              {action.urls.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentImageIndex(idx)}
-                  className={cn(
-                    "h-3 w-3 rounded-full transition-all",
-                    idx === currentImageIndex ? "scale-125 bg-white" : "bg-white/50",
-                  )}
-                />
-              ))}
-            </div>
-          </div>
+          <GalleryAction
+            urls={currentAction.urls}
+            title={currentAction.title || undefined}
+            displayDurationSec={currentAction.displayDurationSec || undefined}
+            onComplete={onComplete}
+          />
         );
 
       default:
-        return null;
+        return (
+          <div className="text-white">
+            Type d'currentAction non supporté: {currentAction.type}
+          </div>
+        );
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+    <div
+      className={cn(
+        "pointer-events-auto fixed inset-0 z-50 flex items-center justify-center bg-black/70 opacity-100 backdrop-blur-sm transition-all",
+        isHidden && "pointer-events-none -z-50 opacity-0",
+      )}
+    >
       <div className="flex w-full max-w-4xl flex-col items-center gap-6 p-8">
-        {action.title && (
-          <h2 className="text-center text-3xl font-bold text-white">{action.title}</h2>
-        )}
+        {renderActionContent()}
 
-        {renderContent()}
-
-        {(action.contentFr || action.contentEn || action.contentBr) && (
+        {/* Affichage des contenus multilingues si disponibles */}
+        {(currentAction.contentFr ||
+          currentAction.contentEn ||
+          currentAction.contentBr) && (
           <div className="max-w-2xl space-y-2 text-center text-white">
-            {action.contentFr && <p className="text-lg">{action.contentFr}</p>}
-            {action.contentEn && <p className="text-lg italic">{action.contentEn}</p>}
-            {action.contentBr && <p className="text-lg italic">{action.contentBr}</p>}
-          </div>
-        )}
-
-        {action.displayDurationSec && mediaEnded && (
-          <div className="text-sm text-white/60">
-            Closing in {action.displayDurationSec}s...
+            {currentAction.contentFr && (
+              <p className="text-lg">{currentAction.contentFr}</p>
+            )}
+            {currentAction.contentEn && (
+              <p className="text-lg italic">{currentAction.contentEn}</p>
+            )}
+            {currentAction.contentBr && (
+              <p className="text-lg italic">{currentAction.contentBr}</p>
+            )}
           </div>
         )}
       </div>

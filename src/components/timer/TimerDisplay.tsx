@@ -1,12 +1,11 @@
-import { type Timer, type TimerAction } from "@/lib/db/schema/timer";
-import dayjs from "dayjs";
+import { type Timer, type TimerAction } from "@/lib/db/schema/timer.schema";
 import { useEffect, useState } from "react";
-import ActionDisplay from "./ActionDisplay";
+import TimerActionDemo from "../demo/TimerActionDemo";
 import TimerCountdown from "./TimerCountdown";
 
 interface TimerDisplayProps {
   timer: Timer & { actions: TimerAction[] };
-  onActionComplete?: (actionId: string) => void;
+  hideTitle?: boolean;
 }
 
 interface TimeLeft {
@@ -16,7 +15,7 @@ interface TimeLeft {
   seconds: number;
 }
 
-const TimerDisplay = ({ timer, onActionComplete }: TimerDisplayProps) => {
+const TimerDisplay = ({ timer, hideTitle = false }: TimerDisplayProps) => {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
     hours: 0,
@@ -25,13 +24,31 @@ const TimerDisplay = ({ timer, onActionComplete }: TimerDisplayProps) => {
   });
   const [currentAction, setCurrentAction] = useState<TimerAction | null>(null);
 
+  const calculateActionTriggerTime = (
+    startTime: Date,
+    durationMinutes: number,
+    triggerOffsetMinutes: number,
+  ): Date => {
+    if (triggerOffsetMinutes === 0) {
+      return new Date(startTime.getTime() + durationMinutes * 60000);
+    } else if (triggerOffsetMinutes < 0) {
+      return new Date(
+        startTime.getTime() + (durationMinutes + triggerOffsetMinutes) * 60000,
+      );
+    } else {
+      return new Date(startTime.getTime() + triggerOffsetMinutes * 60000);
+    }
+  };
+
   useEffect(() => {
     if (!timer.startedAt || !timer.durationMinutes) return;
 
     const interval = setInterval(() => {
-      const now = dayjs();
-      const endTime = dayjs(timer.startedAt).add(timer.durationMinutes!, "minutes");
-      const diff = endTime.diff(now, "seconds");
+      const now = new Date();
+      const endTime = new Date(
+        new Date(timer.startedAt!).getTime() + timer.durationMinutes! * 60000,
+      );
+      const diff = Math.floor((endTime.getTime() - now.getTime()) / 1000);
 
       if (diff <= 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -56,7 +73,7 @@ const TimerDisplay = ({ timer, onActionComplete }: TimerDisplayProps) => {
           action.triggerOffsetMinutes,
         );
 
-        return now.isAfter(actionTriggerTime) || now.isSame(actionTriggerTime);
+        return now >= actionTriggerTime;
       });
 
       if (actionToShow && currentAction?.id !== actionToShow.id) {
@@ -67,42 +84,15 @@ const TimerDisplay = ({ timer, onActionComplete }: TimerDisplayProps) => {
     return () => clearInterval(interval);
   }, [timer, currentAction]);
 
-  const calculateActionTriggerTime = (
-    startTime: Date,
-    durationMinutes: number,
-    triggerOffsetMinutes: number,
-  ) => {
-    const start = dayjs(startTime);
-
-    if (triggerOffsetMinutes === 0) {
-      return start.add(durationMinutes, "minutes");
-    } else if (triggerOffsetMinutes < 0) {
-      return start.add(durationMinutes + triggerOffsetMinutes, "minutes");
-    } else {
-      return start.add(triggerOffsetMinutes, "minutes");
-    }
-  };
-
-  const handleActionComplete = (actionId: string) => {
-    setCurrentAction(null);
-    onActionComplete?.(actionId);
-  };
-
   return (
     <div className="relative">
       <div className="space-y-6">
         <div className="text-center">
-          <h1 className="mb-2 text-4xl font-bold">{timer.name}</h1>
+          {!hideTitle && <h2 className="mb-2 text-4xl font-bold">{timer.name}</h2>}
           {timer.status === "RUNNING" && <TimerCountdown timeLeft={timeLeft} />}
         </div>
       </div>
-
-      {currentAction && (
-        <ActionDisplay
-          action={currentAction}
-          onComplete={() => handleActionComplete(currentAction.id)}
-        />
-      )}
+      <TimerActionDemo timerId={timer.id} />
     </div>
   );
 };

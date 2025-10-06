@@ -1,28 +1,29 @@
 import TimerList from "@/components/admin/TimerList";
 import { getAllTimers } from "@/lib/actions/timer.action";
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { useTimerPolling } from "@/lib/hooks/useTimerPolling";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
 const timersQueryOptions = (weddingEventId: string) =>
   queryOptions({
     queryKey: ["timers", weddingEventId],
-    queryFn: async () => {
-      const result = await getAllTimers({ data: { weddingEventId } });
-      return result;
-    },
+    queryFn: async () => await getAllTimers({ data: { weddingEventId } }),
   });
 
 export const Route = createFileRoute("/(authenticated)/dashboard/$weddingEventId/")({
   component: RouteComponent,
   loader: async ({ context, params }) => {
-    console.log("Loader params:", params);
     context.queryClient.ensureQueryData(timersQueryOptions(params.weddingEventId));
   },
 });
 
 function RouteComponent() {
   const { weddingEventId } = Route.useParams();
-  const { data: timersWithActions, isLoading } = useQuery(
+
+  // Active le polling pour vérifier les timers toutes les 30 secondes
+  useTimerPolling(weddingEventId);
+
+  const { data: timersWithActions, isLoading } = useSuspenseQuery(
     timersQueryOptions(weddingEventId),
   );
 

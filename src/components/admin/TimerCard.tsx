@@ -7,13 +7,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, convertToLocalDate, formatTimezoneAgnosticDate } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import { Calendar, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
+import ActionList from "../timer/ActionList";
 import TimerCountdown from "../timer/TimerCountdown";
 import { Button } from "../ui/button";
-import ActionList from "./ActionList";
 import StatusBadge from "./StatusBadge";
 
 type TimerCardProps = {
@@ -85,12 +85,6 @@ export default function TimerCard({ timerData, actionsData, isDemo }: TimerCardP
     );
   };
 
-  const formatDate = (dateString: Date | null) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toUTCString();
-  };
-
   return (
     <Card className={cn("mx-auto w-full max-w-2xl", isDemo && "overflow-hidden pt-0")}>
       {isDemo && (
@@ -107,7 +101,15 @@ export default function TimerCard({ timerData, actionsData, isDemo }: TimerCardP
         {timerData.scheduledStartTime && (
           <div className="text-muted-foreground flex items-center justify-center gap-2">
             <Calendar className="h-4 w-4" />
-            <span className="text-sm">{formatDate(timerData.scheduledStartTime)}</span>
+            <span className="text-sm">
+              {formatTimezoneAgnosticDate(
+                convertToLocalDate(timerData.scheduledStartTime),
+                {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                },
+              )}
+            </span>
           </div>
         )}
         {timerData.durationMinutes !== null && timerData.durationMinutes > 0 && (

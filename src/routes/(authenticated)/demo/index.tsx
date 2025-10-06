@@ -9,28 +9,31 @@ const currentTimerQueryOptions = (weddingEventId: string) =>
     queryKey: ["currentTimer", weddingEventId],
     queryFn: () =>
       getCurrentTimer({
-        data: { weddingEventId: "wedding-event-1" },
+        data: { weddingEventId },
       }),
   });
 
-export const Route = createFileRoute("/")({
-  component: HomePage,
+export const Route = createFileRoute("/(authenticated)/demo/")({
+  component: DemoPage,
   loader: async ({ context }) => {
     const data = await context.queryClient.ensureQueryData(
-      currentTimerQueryOptions("wedding-event-1"),
+      currentTimerQueryOptions("wedding-event-demo"),
     );
     return data;
   },
 });
 
-function HomePage() {
-  // Active le polling pour vérifier les timers toutes les 30 secondes
-  // useTimerPolling("wedding-event-1");
-
+function DemoPage() {
+  // Active le polling pour vérifier les timers (toutes les 30 secondes)
   const { currentTimer } = usePusher();
+  console.log("[DemoPage] currentTimer from PusherContext:", currentTimer);
+
+  // const { data: currentTimerr } = useSuspenseQuery(
+  //   currentTimerQueryOptions("wedding-event-demo"),
+  // );
 
   return (
-    <main className="relative overflow-x-hidden">
+    <main className="relative">
       <WeddingTimerSection currentTimer={currentTimer} />
     </main>
   );

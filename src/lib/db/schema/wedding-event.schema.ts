@@ -24,9 +24,9 @@ export const weddingEvent = pgTable("wedding_event", {
   ownerId: text("owner_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  completedAt: timestamp("completed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  completedAt: timestamp("completed_at"),
 });
 
 export const weddingParticipant = pgTable("wedding_participant", {
@@ -38,7 +38,7 @@ export const weddingParticipant = pgTable("wedding_participant", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   role: participantRoleEnum("role").notNull(),
-  joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
+  joinedAt: timestamp("joined_at").notNull().defaultNow(),
 });
 
 const { createInsertSchema, createSelectSchema, createUpdateSchema } =

@@ -1,5 +1,13 @@
 import { sql } from "drizzle-orm";
-import { boolean, integer, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  integer,
+  numeric,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { createSchemaFactory } from "drizzle-zod";
 import z from "zod";
 import { user } from "./auth.schema";
@@ -20,7 +28,7 @@ export const timer = pgTable("timer", {
 
   name: text("name").notNull(),
   scheduledStartTime: timestamp("scheduled_start_time"),
-  durationMinutes: integer("duration_minutes").default(0), // 0 ou null = punctual (pas de countdown)
+  durationMinutes: numeric("duration_minutes", { mode: "number" }).default(0), // 0 ou null = punctual (pas de countdown)
 
   status: statusEnum("status").default("PENDING").notNull(),
   isManual: boolean("is_manual").default(false).notNull(), // Gardé, pour trigger manuel indépendamment
@@ -31,10 +39,10 @@ export const timer = pgTable("timer", {
     .notNull()
     .references(() => user.id),
   lastModifiedById: text("last_modified_by_id").references(() => user.id),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  startedAt: timestamp("started_at", { withTimezone: true }),
-  completedAt: timestamp("completed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
 });
 
 export const timerAction = pgTable("timer_action", {
@@ -62,8 +70,8 @@ export const timerAction = pgTable("timer_action", {
   orderIndex: integer("order_index").notNull().default(0),
   displayDurationSec: integer("display_duration_sec"),
 
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  executedAt: timestamp("executed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  executedAt: timestamp("executed_at"),
 });
 
 const { createInsertSchema, createSelectSchema, createUpdateSchema } =

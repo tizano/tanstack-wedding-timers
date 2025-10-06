@@ -12,7 +12,8 @@ export const Route = createFileRoute("/(auth-pages)/login")({
 });
 
 function LoginForm() {
-  const { redirectUrl } = Route.useRouteContext();
+  const routeContext = Route.useRouteContext();
+  const redirectUrl = routeContext?.redirectUrl || "/dashboard/wedding-event-1";
 
   const { mutate: emailLoginMutate, isPending } = useMutation({
     mutationFn: async (data: { email: string; password: string }) =>
@@ -27,10 +28,12 @@ function LoginForm() {
           },
           // better-auth seems to trigger a hard navigation on login,
           // so we don't have to revalidate & navigate ourselves
-          // onSuccess: () => {
-          //   queryClient.removeQueries({ queryKey: authQueryOptions().queryKey });
-          //   navigate({ to: redirectUrl });
-          // },
+          onSuccess: ({ response }) => {
+            console.log("Login successful, should redirect to ", response);
+
+            // queryClient.removeQueries({ queryKey: authQueryOptions().queryKey });
+            // navigate({ to: redirectUrl });
+          },
         },
       ),
   });

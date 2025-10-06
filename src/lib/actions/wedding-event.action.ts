@@ -4,7 +4,6 @@ import { updateWeddingEventSchema } from "@/lib/db/schema/wedding-event.schema";
 import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { authMiddleware } from "../auth/middleware";
 
 // Schéma de validation
 const updateDemoWeddingEventSchema = z.object({
@@ -15,7 +14,7 @@ const updateDemoWeddingEventSchema = z.object({
 // Mutation function (POST) - Protected
 export const updateDemoWeddingEvent = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => updateDemoWeddingEventSchema.parse(data))
-  .middleware([authMiddleware])
+  // .middleware([authMiddleware])
   .handler(async ({ data }) => {
     // TODO: Ajouter vérification auth ici
     // const request = getWebRequest();

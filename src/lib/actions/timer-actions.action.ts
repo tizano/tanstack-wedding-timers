@@ -1,9 +1,13 @@
 import { timerActionService } from "@/lib/services/timer-action-service";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { authMiddleware } from "../auth/middleware";
 
 // Schémas de validation
-const getNextActionSchema = z.object({ timerId: z.string() });
+const getNextActionSchema = z.object({
+  timerId: z.string(),
+  actionId: z.string().optional(),
+});
 const getCurrentActionSchema = z.object({ timerId: z.string() });
 const startActionSchema = z.object({ actionId: z.string() });
 const completeActionSchema = z.object({ actionId: z.string() });
@@ -17,13 +21,19 @@ const jumpToBeforeNextActionSchema = z.object({
 export const getNextAction = createServerFn({ method: "GET" })
   .inputValidator(getNextActionSchema)
   .handler(async ({ data }) => {
-    return await timerActionService.getNextAction(data.timerId);
+    return await timerActionService.getNextAction(data.timerId, data.actionId);
   });
 
 export const getCurrentAction = createServerFn({ method: "GET" })
   .inputValidator(getCurrentActionSchema)
   .handler(async ({ data }) => {
     return await timerActionService.getCurrentAction(data.timerId);
+  });
+
+export const getAllActionsFromWeddingDemo = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async () => {
+    return await timerActionService.getAllActionsFromWeddingDemo();
   });
 
 // Mutation functions (POST)
@@ -41,6 +51,8 @@ export const completeAction = createServerFn({ method: "POST" })
 
 export const resetTimerActions = createServerFn({ method: "POST" })
   .inputValidator(resetTimerActionsSchema)
+  .middleware([authMiddleware])
+
   .handler(async ({ data }) => {
     return await timerActionService.resetTimerActions(data.timerId);
   });

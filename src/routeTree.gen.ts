@@ -14,6 +14,7 @@ import { Route as authPagesRouteRouteImport } from './routes/(auth-pages)/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as authPagesLoginRouteImport } from './routes/(auth-pages)/login'
 import { Route as authenticatedDashboardRouteRouteImport } from './routes/(authenticated)/dashboard/route'
+import { Route as authenticatedDemoIndexRouteImport } from './routes/(authenticated)/demo/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as authenticatedDashboardWeddingEventIdIndexRouteImport } from './routes/(authenticated)/dashboard/$weddingEventId/index'
 import { Route as authenticatedDashboardTimersTimerIdIndexRouteImport } from './routes/(authenticated)/dashboard/timers/$timerId/index'
@@ -42,6 +43,11 @@ const authenticatedDashboardRouteRoute =
     path: '/dashboard',
     getParentRoute: () => authenticatedRouteRoute,
   } as any)
+const authenticatedDemoIndexRoute = authenticatedDemoIndexRouteImport.update({
+  id: '/demo/',
+  path: '/demo/',
+  getParentRoute: () => authenticatedRouteRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof authenticatedDashboardRouteRouteWithChildren
   '/login': typeof authPagesLoginRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/demo': typeof authenticatedDemoIndexRoute
   '/dashboard/$weddingEventId': typeof authenticatedDashboardWeddingEventIdIndexRoute
   '/dashboard/timers/$timerId': typeof authenticatedDashboardTimersTimerIdIndexRoute
 }
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof authenticatedDashboardRouteRouteWithChildren
   '/login': typeof authPagesLoginRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/demo': typeof authenticatedDemoIndexRoute
   '/dashboard/$weddingEventId': typeof authenticatedDashboardWeddingEventIdIndexRoute
   '/dashboard/timers/$timerId': typeof authenticatedDashboardTimersTimerIdIndexRoute
 }
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/(authenticated)/dashboard': typeof authenticatedDashboardRouteRouteWithChildren
   '/(auth-pages)/login': typeof authPagesLoginRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/(authenticated)/demo/': typeof authenticatedDemoIndexRoute
   '/(authenticated)/dashboard/$weddingEventId/': typeof authenticatedDashboardWeddingEventIdIndexRoute
   '/(authenticated)/dashboard/timers/$timerId/': typeof authenticatedDashboardTimersTimerIdIndexRoute
 }
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/api/auth/$'
+    | '/demo'
     | '/dashboard/$weddingEventId'
     | '/dashboard/timers/$timerId'
   fileRoutesByTo: FileRoutesByTo
@@ -102,6 +112,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/api/auth/$'
+    | '/demo'
     | '/dashboard/$weddingEventId'
     | '/dashboard/timers/$timerId'
   id:
@@ -112,6 +123,7 @@ export interface FileRouteTypes {
     | '/(authenticated)/dashboard'
     | '/(auth-pages)/login'
     | '/api/auth/$'
+    | '/(authenticated)/demo/'
     | '/(authenticated)/dashboard/$weddingEventId/'
     | '/(authenticated)/dashboard/timers/$timerId/'
   fileRoutesById: FileRoutesById
@@ -158,6 +170,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof authenticatedDashboardRouteRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
+    '/(authenticated)/demo/': {
+      id: '/(authenticated)/demo/'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof authenticatedDemoIndexRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
     '/api/auth/$': {
@@ -216,11 +235,13 @@ const authenticatedDashboardRouteRouteWithChildren =
 
 interface authenticatedRouteRouteChildren {
   authenticatedDashboardRouteRoute: typeof authenticatedDashboardRouteRouteWithChildren
+  authenticatedDemoIndexRoute: typeof authenticatedDemoIndexRoute
 }
 
 const authenticatedRouteRouteChildren: authenticatedRouteRouteChildren = {
   authenticatedDashboardRouteRoute:
     authenticatedDashboardRouteRouteWithChildren,
+  authenticatedDemoIndexRoute: authenticatedDemoIndexRoute,
 }
 
 const authenticatedRouteRouteWithChildren =

@@ -16,6 +16,7 @@ import appCss from "@/styles.css?url";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { PusherProvider } from "@/lib/provider/puhser/pusher-provider";
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
@@ -25,7 +26,6 @@ export const Route = createRootRouteWithContext<{
     // we're using react-query for client-side caching to reduce client-to-server calls, see /src/router.tsx
     // better-auth's cookieCache is also enabled server-side to reduce server-to-db calls, see /src/lib/auth/auth.ts
     context.queryClient.prefetchQuery(authQueryOptions());
-
     // typically we don't need the user immediately in landing pages,
     // so we're only prefetching here and not awaiting.
     // for protected routes with loader data, see /(authenticated)/route.tsx
@@ -68,10 +68,12 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <ThemeProvider>
-          {children}
-          <Toaster richColors />
-        </ThemeProvider>
+        <PusherProvider>
+          <ThemeProvider>
+            {children}
+            <Toaster richColors />
+          </ThemeProvider>
+        </PusherProvider>
 
         <TanStackDevtools
           plugins={[

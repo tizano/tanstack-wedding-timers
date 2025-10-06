@@ -4,12 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getTimerById, updateTimer } from "@/lib/actions/timer.action";
 import { UpdateTimer } from "@/lib/db/schema/timer.schema";
+import { DevTool } from "@hookform/devtools";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
+import { queryOptions, useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useCanGoBack, useRouter } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { serialize } from "superjson";
 import { z } from "zod";
 
 const updateTimerSchema = z.object({
@@ -22,7 +21,7 @@ const updateTimerSchema = z.object({
 const timerQueryOptions = (timerId: string) =>
   queryOptions({
     queryKey: ["timer", timerId],
-    queryFn: () => getTimerById({ data: { id: timerId } }),
+    queryFn: async () => (await getTimerById({ data: { id: timerId } })) || null,
   });
 
 type UpdateTimerForm = z.infer<typeof updateTimerSchema>;
@@ -36,9 +35,9 @@ export const Route = createFileRoute("/(authenticated)/dashboard/timers/$timerId
 });
 
 function RouteComponent() {
-  const { user } = Route.useRouteContext();
+  const { user, queryClient } = Route.useRouteContext();
   const { timerId } = Route.useParams();
-  const { data: timer, isLoading } = useQuery(timerQueryOptions(timerId));
+  const { data: timer } = useSuspenseQuery(timerQueryOptions(timerId));
   const navigate = Route.useNavigate();
   const router = useRouter();
   const canGoBack = useCanGoBack();
@@ -50,87 +49,91 @@ function RouteComponent() {
         originalDurationMinutes?: number;
       },
     ) => {
-      const transformedData = serialize(data);
-      return await updateTimer({ data: { ...transformedData, id: timerId } });
+      return await updateTimer({ data: { ...data, id: timerId } });
     },
-  });
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset,
-    setError,
-  } = useForm<UpdateTimerForm>({
-    resolver: zodResolver(updateTimerSchema),
-    defaultValues: {
-      name: "",
-      scheduledStartTime: "",
-      durationMinutes: 0,
-      cascadeUpdate: false,
-    },
-  });
-
-  // Populate form when timer data is loaded
-  useEffect(() => {
-    if (timer) {
-      console.log(timer.scheduledStartTime?.toISOString());
-
-      reset({
-        name: timer.name,
-        scheduledStartTime:
-          timer.scheduledStartTime?.toISOString().slice(0, 16) || undefined,
-        durationMinutes: timer.durationMinutes || 0,
-        cascadeUpdate: false,
-      });
-    }
-  }, [timer, reset]);
-
-  const onSubmit = async (data: UpdateTimerForm) => {
-    try {
-      const scheduledStartTime = data.scheduledStartTime
-        ? new Date(data.scheduledStartTime)
-        : null;
-
-      userTimerMutation.mutate({
-        id: timerId,
-        name: data.name,
-        scheduledStartTime: scheduledStartTime,
-        durationMinutes: data.durationMinutes,
-        lastModifiedById: user.id,
-        updatedAt: new Date(),
-        cascadeUpdate: data.cascadeUpdate,
-        originalDurationMinutes: timer?.durationMinutes || 0,
-      });
-
+    onSuccess: () => {
       // Navigate back to dashboard on success
       if (canGoBack) {
         router.history.back();
       } else {
         navigate({ to: "/dashboard" });
       }
-    } catch (error) {
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["timers"] });
+      queryClient.invalidateQueries({ queryKey: ["timer", timerId] });
+    },
+    onError: (error) => {
+      console.error("Failed to update timer:", error);
       setError("root", {
         message:
           error instanceof Error
             ? error.message
             : "An error occurred while updating the timer",
       });
-    }
+    },
+  });
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    control,
+    setError,
+  } = useForm<UpdateTimerForm>({
+    resolver: zodResolver(updateTimerSchema),
+    mode: "onTouched",
+    defaultValues: {
+      name: timer?.name || "",
+      scheduledStartTime: timer?.scheduledStartTime?.toISOString().slice(0, 16) || "",
+      durationMinutes: timer?.durationMinutes || 0,
+      cascadeUpdate: false,
+    },
+  });
+
+  const onSubmit = async (data: UpdateTimerForm) => {
+    const scheduledStartTime = data.scheduledStartTime
+      ? new Date(data.scheduledStartTime)
+      : null;
+
+    const mutationData = {
+      id: timerId,
+      name: data.name,
+      scheduledStartTime: scheduledStartTime,
+      durationMinutes: data.durationMinutes,
+      lastModifiedById: user.id,
+      updatedAt: new Date(),
+      cascadeUpdate: data.cascadeUpdate,
+      originalDurationMinutes: timer?.durationMinutes || 0,
+    };
+
+    userTimerMutation.mutate(mutationData);
   };
 
   if (!timer) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-red-500">Timer not found</div>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-gray-500">Loading...</div>
+      <div className="container mx-auto max-w-2xl py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Timer Not Found</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-600">The requested timer does not exist.</p>
+            <div className="pt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (canGoBack) {
+                    router.history.back();
+                  } else {
+                    navigate({ to: "/dashboard" });
+                  }
+                }}
+              >
+                Go Back
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -240,15 +243,16 @@ function RouteComponent() {
                     navigate({ to: "/dashboard" });
                   }
                 }}
-                disabled={isSubmitting}
+                disabled={userTimerMutation.isPending}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save Changes"}
+              <Button type="submit" disabled={userTimerMutation.isPending}>
+                {userTimerMutation.isPending ? "Saving..." : "Save Changes"}
               </Button>
             </div>
           </form>
+          <DevTool control={control} /> {/* set up the dev tool */}
         </CardContent>
       </Card>
     </div>

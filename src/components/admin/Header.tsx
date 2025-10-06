@@ -30,13 +30,18 @@ export const Header = () => {
             <div className="flex flex-shrink-0 items-center space-x-4">
               <h1
                 className="text-lg font-semibold text-gray-900 transition-colors hover:cursor-pointer hover:text-gray-700 dark:text-gray-100 dark:hover:text-gray-300"
-                onClick={() => navigate({ to: "/dashboard" })}
+                onClick={() =>
+                  navigate({
+                    to: "/dashboard/$weddingEventId",
+                    params: { weddingEventId: "wedding-event-1" },
+                  })
+                }
               >
                 Tony & Neka Timers
               </h1>
               <Link
                 to="/"
-                className="text-gray-900 hover:cursor-pointer hover:text-indigo-900 hover:underline"
+                className="text-gray-900 hover:cursor-pointer hover:text-gray-700 hover:underline dark:text-gray-100 dark:hover:text-gray-300"
               >
                 Home Wedding
               </Link>

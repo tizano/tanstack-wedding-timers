@@ -1,0 +1,1 @@
+ALTER TABLE "timer" ALTER COLUMN "duration_minutes" SET DATA TYPE numeric;

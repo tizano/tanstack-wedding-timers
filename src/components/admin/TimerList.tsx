@@ -1,5 +1,6 @@
 import { getAllTimers } from "@/lib/actions/timer.action";
 import { Link, useNavigate } from "@tanstack/react-router";
+import EnableDemoButton from "../demo/EnableDemoButton";
 import { Button } from "../ui/button";
 import TimerCard from "./TimerCard";
 
@@ -9,6 +10,10 @@ type TimerListProps = {
 };
 export default function TimerList({ timersWithActions, isDemo }: TimerListProps) {
   const navigate = useNavigate();
+
+  if (timersWithActions.length === 0) {
+    return <div>No timers found.</div>;
+  }
 
   const renderBannerDemoMode = () => {
     if (!isDemo) {
@@ -32,7 +37,7 @@ export default function TimerList({ timersWithActions, isDemo }: TimerListProps)
         <Button
           onClick={() =>
             navigate({
-              to: "/dashboard",
+              to: "/dashboard/$weddingEventId",
               params: { weddingEventId: "wedding-event-1" },
             })
           }
@@ -48,20 +53,7 @@ export default function TimerList({ timersWithActions, isDemo }: TimerListProps)
     if (isDemo) {
       return null;
     }
-    return (
-      <Button
-        onClick={() =>
-          navigate({
-            to: "/dashboard/$weddingEventId",
-            params: { weddingEventId: "wedding-event-demo" },
-          })
-        }
-        variant={"destructive"}
-        className="cursor-pointer"
-      >
-        Enable Demo Mode
-      </Button>
-    );
+    return <EnableDemoButton />;
   };
 
   return (
