@@ -1,4 +1,5 @@
 import { TimerWithActions } from "@/lib/types/timer.type";
+import { formatTimezoneAgnosticDate } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "../ui/button";
 import TimerDisplay from "./TimerDisplay";
@@ -31,7 +32,10 @@ function WeddingTimerSection({
               {currentTimer.scheduledStartTime && (
                 <p className="text-lg">
                   Programmé pour:{" "}
-                  {new Date(currentTimer.scheduledStartTime).toLocaleString("fr-FR")}
+                  {formatTimezoneAgnosticDate(currentTimer.scheduledStartTime, {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  })}
                 </p>
               )}
               {currentTimer.durationMinutes != null &&

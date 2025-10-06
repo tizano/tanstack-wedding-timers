@@ -323,7 +323,7 @@ export class TimerActionService {
     );
 
     let newDurationMinutes =
-      (endScheduledTime.getTime() - triggeredManuallyAt.getTime()) / 60000 +
+      (endScheduledTime.getTime() - triggeredManuallyAt.getTime()) / 60000 -
       nextAction.action.triggerOffsetMinutes -
       secondsBefore / 60;
 

@@ -1,5 +1,5 @@
 import { env } from "@/env/server";
-import { and, asc, eq, gt, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull, lt, or } from "drizzle-orm";
 import Pusher from "pusher";
 
 import { db } from "@/lib/db";
@@ -574,6 +574,7 @@ export class TimerService {
         eq(timer.weddingEventId, weddingEventId),
         eq(timer.status, "PENDING"),
         or(eq(timer.durationMinutes, 0), isNull(timer.durationMinutes)),
+        eq(timer.isManual, false),
       ),
       orderBy: [asc(timer.orderIndex), asc(timer.scheduledStartTime)],
     });
@@ -601,49 +602,6 @@ export class TimerService {
       }
     }
     return { startedTimer: null };
-  }
-
-  /**
-   * Vérifie et démarre les timers ponctuels pour tous les événements actifs
-   * À appeler via un cron job toutes les minutes
-   */
-  async checkAndStartAllPunctualTimers() {
-    const now = new Date();
-
-    // Récupérer tous les événements de mariage actifs (qui ont un currentTimerId ou qui sont le jour J)
-    const activeEvents = await db.query.weddingEvent.findMany({
-      where: or(
-        // Événements avec un timer en cours
-        and(isNotNull(weddingEvent.currentTimerId)),
-        // Ou événements dont la date est aujourd'hui (en cours)
-        eq(weddingEvent.eventDate, now),
-      ),
-    });
-
-    const results = [];
-
-    for (const event of activeEvents) {
-      try {
-        const result = await this.checkAndStartPunctualTimers(event.id);
-        if (result.startedTimer) {
-          results.push({
-            weddingEventId: event.id,
-            startedTimer: result.startedTimer,
-          });
-        }
-      } catch (error) {
-        console.error(`Erreur pour l'événement ${event.id}:`, error);
-        results.push({
-          weddingEventId: event.id,
-          error: String(error),
-        });
-      }
-    }
-
-    return {
-      checkedEvents: activeEvents.length,
-      results,
-    };
   }
 
   /**

@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { cn, convertToLocalDate, formatTimezoneAgnosticDate } from "@/lib/utils";
+import { cn, formatTimezoneAgnosticDate } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import { Calendar, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -102,13 +102,10 @@ export default function TimerCard({ timerData, actionsData, isDemo }: TimerCardP
           <div className="text-muted-foreground flex items-center justify-center gap-2">
             <Calendar className="h-4 w-4" />
             <span className="text-sm">
-              {formatTimezoneAgnosticDate(
-                convertToLocalDate(timerData.scheduledStartTime),
-                {
-                  dateStyle: "short",
-                  timeStyle: "short",
-                },
-              )}
+              {formatTimezoneAgnosticDate(timerData.scheduledStartTime, {
+                dateStyle: "short",
+                timeStyle: "short",
+              })}
             </span>
           </div>
         )}

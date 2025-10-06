@@ -126,12 +126,6 @@ export const checkAndStartPunctualTimers = createServerFn({ method: "POST" })
     return await timerService.checkAndStartPunctualTimers(data.weddingEventId);
   });
 
-export const checkAndStartAllPunctualTimers = createServerFn({ method: "POST" })
-  // .middleware([authMiddleware])
-  .handler(async () => {
-    return await timerService.checkAndStartAllPunctualTimers();
-  });
-
 export const resetWedding = createServerFn({ method: "POST" })
   .inputValidator(resetWeddingSchema)
   // .middleware([authMiddleware])
