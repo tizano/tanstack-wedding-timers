@@ -1,6 +1,5 @@
 import TimerList from "@/components/admin/TimerList";
 import { getAllTimers } from "@/lib/actions/timer.action";
-import { useTimerPolling } from "@/lib/hooks/useTimerPolling";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -21,8 +20,6 @@ function RouteComponent() {
   const { weddingEventId } = Route.useParams();
 
   // Active le polling pour vérifier les timers toutes les 30 secondes
-  useTimerPolling(weddingEventId);
-
   const { data: timersWithActions, isLoading } = useSuspenseQuery(
     timersQueryOptions(weddingEventId),
   );
