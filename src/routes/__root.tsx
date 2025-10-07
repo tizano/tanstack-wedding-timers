@@ -7,16 +7,11 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
-import { TanStackDevtools } from "@tanstack/react-devtools";
-import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-
 import { authQueryOptions, type AuthQueryResult } from "@/lib/auth/queries";
 import appCss from "@/styles.css?url";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
-import { env } from "@/env/client";
 import { PusherProvider } from "@/lib/provider/puhser/pusher-provider";
 
 export const Route = createRootRouteWithContext<{
@@ -75,20 +70,7 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
             <Toaster richColors />
           </ThemeProvider>
         </PusherProvider>
-        {env.VITE_DEV_MODE && (
-          <TanStackDevtools
-            plugins={[
-              {
-                name: "TanStack Query",
-                render: <ReactQueryDevtoolsPanel />,
-              },
-              {
-                name: "TanStack Router",
-                render: <TanStackRouterDevtoolsPanel />,
-              },
-            ]}
-          />
-        )}
+        {/* <DevTools /> */}
         <Scripts />
       </body>
     </html>

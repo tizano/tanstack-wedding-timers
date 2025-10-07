@@ -13,7 +13,11 @@ export const env = createEnv({
     VITE_PUSHER_KEY: z.string().min(1),
     PUSHER_SECRET: z.string().min(1),
     VITE_PUSHER_CLUSTER: z.string().min(1),
-    VITE_DEV_MODE: z.coerce.boolean().default(true),
   },
   runtimeEnv: process.env,
+  onValidationError: (error) => {
+    console.error("❌ Variables d'environnement server invalides:");
+    console.error(error.flat());
+    throw new Error("Invalid environment server variables");
+  },
 });

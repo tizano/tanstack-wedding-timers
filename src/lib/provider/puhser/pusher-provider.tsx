@@ -27,9 +27,6 @@ let pusherInstance: Pusher | null = null;
 const getPusherInstance = (): Pusher => {
   if (!pusherInstance) {
     // Configuration Pusher en mode développement uniquement
-    if (env.VITE_DEV_MODE) {
-      Pusher.logToConsole = true;
-    }
 
     // Initialiser Pusher une seule fois
     pusherInstance = new Pusher(env.VITE_PUSHER_KEY, {
