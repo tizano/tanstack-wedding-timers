@@ -74,7 +74,7 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
             <Toaster richColors />
           </ThemeProvider>
         </PusherProvider>
-        {process.env.VERCEL_ENV === "development" && (
+        {process.env.VERCEL_ENV !== "production" && (
           <TanStackDevtools
             plugins={[
               {

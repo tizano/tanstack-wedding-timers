@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  getNextAction,
+  getNextActionFromCurrent,
   jumpToBeforeNextAction,
   resetTimerActions,
 } from "@/lib/actions/timer-actions.action";
@@ -28,7 +28,7 @@ const timerActionsQueryOptions = (timerId: string) =>
   queryOptions({
     queryKey: ["timerActions", timerId],
     queryFn: () =>
-      getNextAction({
+      getNextActionFromCurrent({
         data: { timerId },
       }),
   });

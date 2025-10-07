@@ -1,4 +1,4 @@
-import { getNextAction } from "@/lib/actions/timer-actions.action";
+import { getNextActionFromCurrent } from "@/lib/actions/timer-actions.action";
 import { TimerAction } from "@/lib/db/schema";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -19,7 +19,7 @@ const VideoAction = ({ action, onComplete }: VideoActionProps) => {
   const handleComplete = useCallback(() => {
     console.log(`Video action ${action.id} completed.`);
     // call next action in server
-    getNextAction({ data: { timerId: action.timerId, actionId: action.id } });
+    getNextActionFromCurrent({ data: { timerId: action.timerId, actionId: action.id } });
     onComplete?.();
   }, [action.id, action.timerId, onComplete]);
 
