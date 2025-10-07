@@ -14,7 +14,7 @@ import { user } from "./auth.schema";
 import { weddingEvent } from "./wedding-event.schema";
 
 export const STATUSES = ["PENDING", "RUNNING", "COMPLETED"] as const;
-export const ASSET_TYPES = ["GALLERY", "IMAGE", "SOUND", "VIDEO"] as const;
+export const ASSET_TYPES = ["GALLERY", "IMAGE", "SOUND", "VIDEO", "IMAGE_SOUND"] as const;
 
 // Enums
 export const statusEnum = pgEnum("status", STATUSES);

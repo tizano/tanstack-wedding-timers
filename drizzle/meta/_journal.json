@@ -15,6 +15,13 @@
       "when": 1759709950002,
       "tag": "0001_icy_exodus",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1759798601185,
+      "tag": "0002_graceful_black_bird",
+      "breakpoints": true
     }
   ]
 }

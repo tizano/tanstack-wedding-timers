@@ -652,17 +652,9 @@ async function seedWeddingData() {
     {
       id: "asset-timer-5-image",
       timerId: "timer-5",
-      type: "IMAGE",
+      type: "IMAGE_SOUND",
       orderIndex: 0,
-      url: "/assets/images/telephone.png",
-      createdAt: new Date(),
-    },
-    {
-      id: "asset-timer-5-sound",
-      timerId: "timer-5",
-      type: "SOUND",
-      url: "/assets/sounds/audio-6-telephone.mp3",
-      orderIndex: 1,
+      urls: ["/assets/images/telephone.png", "/assets/sounds/audio-6-telephone.mp3"],
       createdAt: new Date(),
     },
 
@@ -693,20 +685,11 @@ async function seedWeddingData() {
     {
       id: "asset-timer-8-image",
       timerId: "timer-8",
-      type: "IMAGE",
-      url: "/assets/images/jeu.png",
+      type: "IMAGE_SOUND",
+      urls: ["/assets/images/jeu.png", "/assets/sounds/audio-8-cosmic-love.mp3"],
       orderIndex: 0,
       createdAt: new Date(),
     },
-    {
-      id: "asset-timer-8-sound",
-      timerId: "timer-8",
-      type: "SOUND",
-      url: "/assets/sounds/audio-8-cosmic-love.mp3",
-      orderIndex: 1,
-      createdAt: new Date(),
-    },
-
     // Timer 9: Sound - Bouquet toss
     {
       id: "asset-timer-9-sound",
@@ -765,17 +748,9 @@ async function seedWeddingData() {
     {
       id: "asset-timer-14-image",
       timerId: "timer-14",
-      type: "IMAGE",
-      url: "/assets/images/photomaton.png",
+      type: "IMAGE_SOUND",
+      urls: ["/assets/images/photomaton.png", "/assets/sounds/audio-14-photomaton.mp3"],
       orderIndex: 0,
-      createdAt: new Date(),
-    },
-    {
-      id: "asset-timer-14-sound",
-      timerId: "timer-14",
-      type: "SOUND",
-      url: "/assets/sounds/audio-14-photomaton.mp3",
-      orderIndex: 1,
       createdAt: new Date(),
     },
 
