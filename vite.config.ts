@@ -1,5 +1,5 @@
 import tailwindcss from "@tailwindcss/vite";
-// import { nitroV2Plugin } from "@tanstack/nitro-v2-vite-plugin";
+import { nitroV2Plugin } from "@tanstack/nitro-v2-vite-plugin";
 
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
@@ -13,9 +13,7 @@ export default defineConfig({
       projects: ["./tsconfig.json"],
     }),
     tanstackStart(),
-    // nitroV2Plugin({
-    //   compatibilityDate: "latest",
-    // }),
+    nitroV2Plugin(),
     // https://tanstack.com/start/latest/docs/framework/react/hosting
     // netlify(),
     viteReact({

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite dev --port 5173",
     "build": "vite build",
-    "start": "bun run ./dist/server/server.js",
+    "start": "node .output/server/index.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "check-types": "tsc --noEmit",
