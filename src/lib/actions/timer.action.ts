@@ -14,8 +14,6 @@ const startWeddingDemoSchema = z.object({
 });
 const executeActionSchema = z.object({ actionId: z.string() });
 const completeTimerSchema = z.object({ timerId: z.string() });
-const checkAndStartWeddingSchema = z.object({ weddingEventId: z.string() });
-const checkAndStartPunctualTimersSchema = z.object({ weddingEventId: z.string() });
 const resetWeddingSchema = z.object({
   weddingEventId: z.string(),
   weddingEventIdToCopyFrom: z.string(),
@@ -31,16 +29,6 @@ const updateTimerSchemaInput = z.object({
 const startTimerSchema = z.object({
   timerId: z.string(),
   weddingEventId: z.string(),
-});
-
-const startPunctualOrManualTimerSchema = z.object({
-  timerId: z.string(),
-  weddingEventId: z.string(),
-});
-
-const jumpToTimerSchema = z.object({
-  timerId: z.string(),
-  secondsBeforeAction: z.number().optional().default(15),
 });
 
 // Query functions (GET) - Public
@@ -66,7 +54,7 @@ export const getAllTimers = createServerFn({ method: "GET" })
 
 export const updateTimer = createServerFn({ method: "POST" })
   .inputValidator(updateTimerSchemaInput)
-  // .middleware([authMiddleware])
+  .middleware([authMiddleware])
   .handler(async ({ data }) => {
     return await timerService.updateTimer(data.id, data);
   });
@@ -83,62 +71,31 @@ export const startWeddingDemo = createServerFn({ method: "POST" })
 
 export const startTimer = createServerFn({ method: "POST" })
   .inputValidator(startTimerSchema)
-  // .middleware([authMiddleware])
+  .middleware([authMiddleware])
   .handler(async ({ data }) => {
     return await timerService.startTimer(data.timerId, data.weddingEventId);
   });
 
-export const startPunctualOrManualTimer = createServerFn({ method: "POST" })
-  .inputValidator(startPunctualOrManualTimerSchema)
-  // .middleware([authMiddleware])
-  .handler(async ({ data }) => {
-    return await timerService.startPunctualOrManualTimer(
-      data.timerId,
-      data.weddingEventId,
-    );
-  });
-
 export const executeAction = createServerFn({ method: "POST" })
   .inputValidator(executeActionSchema)
-  // .middleware([authMiddleware])
+  .middleware([authMiddleware])
   .handler(async ({ data }) => {
     return await timerService.executeAction(data.actionId);
   });
 
 export const completeTimer = createServerFn({ method: "POST" })
   .inputValidator(completeTimerSchema)
-  // .middleware([authMiddleware])
+  .middleware([authMiddleware])
   .handler(async ({ data }) => {
     return await timerService.completeTimer(data.timerId);
   });
 
-export const checkAndStartWedding = createServerFn({ method: "POST" })
-  .inputValidator(checkAndStartWeddingSchema)
-  // .middleware([authMiddleware])
-  .handler(async ({ data }) => {
-    return await timerService.checkAndStartWedding(data.weddingEventId);
-  });
-
-export const checkAndStartPunctualTimers = createServerFn({ method: "POST" })
-  .inputValidator(checkAndStartPunctualTimersSchema)
-  // .middleware([authMiddleware])
-  .handler(async ({ data }) => {
-    return await timerService.checkAndStartPunctualTimers(data.weddingEventId);
-  });
-
 export const resetWedding = createServerFn({ method: "POST" })
   .inputValidator(resetWeddingSchema)
-  // .middleware([authMiddleware])
+  .middleware([authMiddleware])
   .handler(async ({ data }) => {
     return await timerService.resetWeddingFromNormal(
       data.weddingEventId,
       data.weddingEventIdToCopyFrom,
     );
-  });
-
-export const jumpToTimer = createServerFn({ method: "POST" })
-  .inputValidator(jumpToTimerSchema)
-  // .middleware([authMiddleware])
-  .handler(async ({ data }) => {
-    return await timerService.jumpToTimer(data.timerId, data.secondsBeforeAction);
   });

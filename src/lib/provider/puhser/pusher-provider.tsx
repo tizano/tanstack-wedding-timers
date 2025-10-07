@@ -1,6 +1,5 @@
 import { env } from "@/env/client";
 import { getCurrentTimer } from "@/lib/actions/timer.action";
-import { useTimerPolling } from "@/lib/hooks/useTimerPolling";
 import { ACTION_UPDATED, CHANNEL, TIMER_UPDATED, logger } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useRouter } from "@tanstack/react-router";
@@ -60,8 +59,6 @@ interface PusherProviderProps {
 export function PusherProvider({ children }: PusherProviderProps) {
   const router = useRouter();
   const location = useLocation();
-
-  useTimerPolling("wedding-event-demo");
 
   const getCurrentTimerFn = useServerFn(getCurrentTimer);
   const {

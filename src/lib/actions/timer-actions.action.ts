@@ -8,7 +8,6 @@ const getNextActionSchema = z.object({
   timerId: z.string(),
   actionId: z.string().optional(),
 });
-const getCurrentActionSchema = z.object({ timerId: z.string() });
 const startActionSchema = z.object({ actionId: z.string() });
 const completeActionSchema = z.object({ actionId: z.string() });
 const resetTimerActionsSchema = z.object({ timerId: z.string() });
@@ -18,22 +17,10 @@ const jumpToBeforeNextActionSchema = z.object({
 });
 
 // Query functions (GET)
-export const getNextAction = createServerFn({ method: "GET" })
+export const getNextActionFromCurrent = createServerFn({ method: "GET" })
   .inputValidator(getNextActionSchema)
   .handler(async ({ data }) => {
-    return await timerActionService.getNextAction(data.timerId, data.actionId);
-  });
-
-export const getCurrentAction = createServerFn({ method: "GET" })
-  .inputValidator(getCurrentActionSchema)
-  .handler(async ({ data }) => {
-    return await timerActionService.getCurrentAction(data.timerId);
-  });
-
-export const getAllActionsFromWeddingDemo = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .handler(async () => {
-    return await timerActionService.getAllActionsFromWeddingDemo();
+    return await timerActionService.getNextActionFromCurrent(data.timerId, data.actionId);
   });
 
 // Mutation functions (POST)

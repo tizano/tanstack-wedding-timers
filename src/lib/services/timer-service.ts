@@ -1,5 +1,5 @@
 import { env } from "@/env/server";
-import { and, asc, eq, gt, inArray, isNull, lt, or } from "drizzle-orm";
+import { and, asc, eq, gt, inArray } from "drizzle-orm";
 import Pusher from "pusher";
 
 import { db } from "@/lib/db";
@@ -8,7 +8,6 @@ import {
   ACTION_UPDATED,
   CHANNEL,
   convertToTimezoneAgnosticDate,
-  isTimezoneAgnosticDatePast,
   logger,
   TIMER_UPDATED,
 } from "../utils";
@@ -142,15 +141,6 @@ export class TimerService {
     for (let i = 0; i < allTimers.length; i++) {
       const currentTimer = allTimers[i];
 
-      // Mettre à jour le scheduledStartTime du timer actuel
-      await db
-        .update(timer)
-        .set({
-          scheduledStartTime: currentScheduledTime,
-          updatedAt: now,
-        })
-        .where(eq(timer.id, currentTimer.id));
-
       // Calculer le scheduledStartTime du prochain timer
       if (i < allTimers.length - 1) {
         // Si le timer actuel a une durée, ajouter cette durée
@@ -162,6 +152,15 @@ export class TimerService {
         // Si le timer actuel est ponctuel/manuel, on ne change pas currentScheduledTime
         // Le prochain timer aura la même heure programmée (sera géré manuellement ou par cron)
       }
+
+      // Mettre à jour le scheduledStartTime du timer actuel
+      await db
+        .update(timer)
+        .set({
+          scheduledStartTime: currentScheduledTime,
+          updatedAt: now,
+        })
+        .where(eq(timer.id, currentTimer.id));
     }
 
     // 4. Récupérer le premier timer avec une durée pour le démarrer
@@ -169,18 +168,7 @@ export class TimerService {
 
     if (!firstTimer) {
       // Si aucun timer avec durée, démarrer le premier timer manuel/ponctuel
-      const firstManualTimer = allTimers[0];
-      await this.startPunctualOrManualTimer(firstManualTimer.id, weddingEventId);
-
-      // Notifier via Pusher
-      await pusher.trigger(CHANNEL, TIMER_UPDATED, {
-        weddingEventId,
-        timerId: firstManualTimer.id,
-        action: "wedding-demo-started",
-        startTime: now.toISOString(),
-      });
-
-      return { timerId: firstManualTimer.id, startTime: now };
+      throw new Error("Aucun timer avec durée trouvé pour démarrer le mariage");
     }
 
     // Stop all timers that might be running (safety)
@@ -219,7 +207,6 @@ export class TimerService {
     });
 
     if (!currentTimer) {
-      // logger(`Timer not found: ${timerId}`);
       throw new Error("Timer non trouvé");
     }
 
@@ -273,59 +260,6 @@ export class TimerService {
     });
 
     return { timerId, startTime: now };
-  }
-
-  /**
-   * Démarre un timer spécifique
-   * Utilisé pour le démarrage d'un timer ponctuel ou manuel
-   * Ne met pas à jour le currentTimerId du weddingEvent
-   * Appelé par le frontend quand l'utilisateur clique sur "Démarrer" ou bien par le cron pour les timers ponctuels
-   * TODO : gérer les erreurs si un timer avec durée est déjà en cours (voir startTimer)
-   * TODO : gérer le cas où plusieurs timers ponctuels sont programmés à la même heure (ne démarrer que le premier, les autres attendront le cron suivant)
-   */
-  async startPunctualOrManualTimer(timerId: string, weddingEventId: string) {
-    const currentTimer = await db.query.timer.findFirst({
-      where: eq(timer.id, timerId),
-      with: { actions: true },
-    });
-
-    if (!currentTimer) {
-      throw new Error("Timer non trouvé");
-    }
-
-    // Vérifier les contraintes selon le type de timer
-    const isPunctualOrManual =
-      currentTimer.isManual ||
-      !currentTimer.durationMinutes ||
-      currentTimer.durationMinutes === 0;
-
-    if (isPunctualOrManual) {
-      console.log(
-        `Démarrage du timer ponctuel ou manuel ${timerId} pour l'événement ${weddingEventId}`,
-      );
-
-      // Démarrer le timer sans mettre a jour le currentTimerId du weddingEvent
-      const now = new Date();
-      const updatedTimer = await db
-        .update(timer)
-        .set({
-          status: "RUNNING",
-          startedAt: now,
-          updatedAt: now,
-        })
-        .where(eq(timer.id, timerId));
-
-      // Notifier via Pusher
-      await pusher.trigger(CHANNEL, TIMER_UPDATED, {
-        timer: updatedTimer,
-        weddingEventId,
-        action: "started",
-        startTime: now.toUTCString(),
-      });
-
-      return { timer: updatedTimer, startTime: now };
-    }
-    throw new Error("Le timer doit être manuel ou ponctuel (sans durée)");
   }
 
   /**
@@ -386,8 +320,7 @@ export class TimerService {
   }
 
   /**
-   * Complète un timer et passe au suivant
-   * Appelé soit automatiquement (dernière action terminée), soit manuellement
+   * Complète un timer et cherche l'id du suivant
    */
   async completeTimer(timerId: string) {
     const currentTimer = await db.query.timer.findFirst({
@@ -425,183 +358,20 @@ export class TimerService {
       orderBy: [asc(timer.orderIndex)],
     });
 
-    let nextTimerId: string | null = null;
-
-    if (nextTimer) {
-      nextTimerId = nextTimer.id;
-
-      // Mettre à jour le currentTimerId
-      await db
-        .update(weddingEvent)
-        .set({
-          currentTimerId: nextTimerId,
-          updatedAt: now,
-        })
-        .where(eq(weddingEvent.id, currentTimer.weddingEventId));
-
-      /**
-       * Démarrer automatiquement le prochain timer s'il n'est pas manuel ou pas ponctuel, donc avec une durée > 0
-       * Les timers manuels attendront une action utilisateur pour démarrer
-       * Les timers ponctuels attendront que le cron ou le front envoie une requête pour démarrer
-       * Cela permet de gérer les cas où plusieurs timers ponctuels sont programmés à la suite
-       */
-
-      if (
-        !nextTimer.isManual ||
-        (nextTimer.durationMinutes && nextTimer.durationMinutes > 0)
-      ) {
-        await this.startTimer(nextTimerId, currentTimer.weddingEventId);
-      }
-    } else {
-      // Plus de timer suivant, le mariage est terminé !
-      await db
-        .update(weddingEvent)
-        .set({
-          currentTimerId: null,
-          updatedAt: now,
-          completedAt: now,
-        })
-        .where(eq(weddingEvent.id, currentTimer.weddingEventId));
-    }
-
     // Notifier via Pusher
     await pusher.trigger(CHANNEL, TIMER_UPDATED, {
       timerId,
       weddingEventId: currentTimer.weddingEventId,
       action: "completed",
-      nextTimerId,
+      nextTimerId: nextTimer ? nextTimer.id : null,
       completedAt: now.toUTCString(),
     });
 
     return {
       timerId,
       completedAt: now,
-      nextTimerId,
+      nextTimerId: nextTimer ? nextTimer.id : null,
     };
-  }
-
-  /**
-   * Vérifie et démarre le premier timer du mariage si son heure de début est passée
-   * Met à jour le weddingEvent.currentTimerId
-   * À appeler via polling ou cron job
-   */
-  async checkAndStartWedding(weddingEventId: string) {
-    const now = new Date();
-
-    // Récupérer l'événement
-    const event = await db.query.weddingEvent.findFirst({
-      where: eq(weddingEvent.id, weddingEventId),
-    });
-
-    if (!event) {
-      console.error(`Événement de mariage non trouvé: ${weddingEventId}`);
-      return { started: false, reason: "Event not found" };
-    }
-
-    // Si le mariage a déjà un currentTimerId, il est déjà démarré
-    if (event.currentTimerId) {
-      return { started: false, reason: "Wedding already started" };
-    }
-
-    // Récupérer le premier timer (orderIndex le plus petit) avec une durée
-    const firstTimer = await db.query.timer.findFirst({
-      where: and(
-        eq(timer.weddingEventId, weddingEventId),
-        eq(timer.status, "PENDING"),
-        gt(timer.durationMinutes, 0), // On cherche le premier timer avec durée
-      ),
-      orderBy: [asc(timer.orderIndex)],
-    });
-
-    if (!firstTimer) {
-      return { started: false, reason: "No timer found" };
-    }
-
-    // Si le timer n'a pas de scheduledStartTime, ne rien faire
-    if (!firstTimer.scheduledStartTime) {
-      return { started: false, reason: "No scheduled start time" };
-    }
-
-    const scheduledTime = firstTimer.scheduledStartTime;
-
-    logger(
-      `[CheckAndStartWedding] Timer: ${firstTimer.name}, Scheduled: ${scheduledTime}, Now: ${now}`,
-    );
-
-    // Si l'heure programmée n'est pas encore passée, ne rien faire
-    if (!isTimezoneAgnosticDatePast(scheduledTime)) {
-      logger(
-        `[CheckAndStartWedding] Il n'est pas encore temps de démarrer le mariage ${weddingEventId} : scheduled at ${scheduledTime}, now is ${now}`,
-      );
-
-      return {
-        started: false,
-        reason: "Not yet time",
-        scheduledTime: scheduledTime.toISOString(),
-        currentTime: now.toISOString(),
-      };
-    }
-
-    // L'heure est passée, démarrer le mariage
-    try {
-      logger(`[CheckAndStartWedding] Démarrage du mariage ${weddingEventId}`);
-      await this.startTimer(firstTimer.id, weddingEventId);
-      return {
-        started: true,
-        timerId: firstTimer.id,
-        timerName: firstTimer.name,
-        startedAt: now.toISOString(),
-      };
-    } catch (error) {
-      console.error(
-        `[CheckAndStartWedding] Erreur lors du démarrage du timer ${firstTimer.id}:`,
-        error,
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Vérifie et démarre les timers ponctuels dont l'heure est passée
-   * À appeler via un cron job toutes les minutes
-   */
-  async checkAndStartPunctualTimers(weddingEventId: string) {
-    // Trouver le premier timer ponctuel PENDING dont scheduledStartTime est passé
-    // Le filtre sur scheduledStartTime <= now doit être fait en JS car Drizzle
-    // n'a pas de comparateur direct avec new Date() dans le where
-    const timerToStart = await db.query.timer.findFirst({
-      where: and(
-        eq(timer.weddingEventId, weddingEventId),
-        eq(timer.status, "PENDING"),
-        or(eq(timer.durationMinutes, 0), isNull(timer.durationMinutes)),
-        eq(timer.isManual, false),
-      ),
-      orderBy: [asc(timer.orderIndex), asc(timer.scheduledStartTime)],
-    });
-
-    // Si scheduledStartTime n'existe pas ne rien faire
-    if (!timerToStart || !timerToStart.scheduledStartTime) {
-      return { startedTimer: null };
-    }
-
-    // Si l'heure de début du timer n'est pas encore passée, ne rien faire
-    if (!isTimezoneAgnosticDatePast(timerToStart.scheduledStartTime)) {
-      return { startedTimer: null };
-    }
-
-    if (
-      isTimezoneAgnosticDatePast(timerToStart.scheduledStartTime) &&
-      timerToStart.status === "PENDING"
-    ) {
-      try {
-        await this.startPunctualOrManualTimer(timerToStart.id, weddingEventId);
-        return { startedTimer: timerToStart.id };
-      } catch (error) {
-        console.error(`Erreur lors du démarrage du timer ${timerToStart.id}:`, error);
-        throw error;
-      }
-    }
-    return { startedTimer: null };
   }
 
   /**
@@ -774,82 +544,6 @@ export class TimerService {
 
     return { success: true };
   }
-
-  /**
-   * Pour le mode démo : sauter à un timer spécifique
-   * Complète tous les timers précédents et démarre le timer cible à T-15s
-   */
-  async jumpToTimer(timerId: string, secondsBeforeAction: number = 15) {
-    const targetTimer = await db.query.timer.findFirst({
-      where: eq(timer.id, timerId),
-      with: {
-        actions: {
-          orderBy: [asc(timerAction.orderIndex)],
-        },
-      },
-    });
-
-    if (!targetTimer) {
-      throw new Error("Timer non trouvé");
-    }
-
-    const now = new Date();
-
-    // Compléter tous les timers précédents
-    await db
-      .update(timer)
-      .set({
-        status: "COMPLETED",
-        completedAt: now,
-        updatedAt: now,
-      })
-      .where(
-        and(
-          eq(timer.weddingEventId, targetTimer.weddingEventId),
-          lt(timer.orderIndex, targetTimer.orderIndex),
-        ),
-      );
-
-    // Calculer l'heure de démarrage pour être à T-15s de la première action
-    const firstAction = targetTimer.actions[0];
-    let startTime = new Date(now.getTime() - secondsBeforeAction * 1000);
-
-    // Si l'action a un offset, l'ajuster
-    if (firstAction?.triggerOffsetMinutes) {
-      startTime = new Date(
-        startTime.getTime() - firstAction.triggerOffsetMinutes * 60000,
-      );
-    }
-
-    // Démarrer le timer cible avec l'heure calculée
-    await db
-      .update(timer)
-      .set({
-        status: "RUNNING",
-        startedAt: startTime,
-        updatedAt: now,
-      })
-      .where(eq(timer.id, timerId));
-
-    // Mettre à jour le currentTimerId
-    await db
-      .update(weddingEvent)
-      .set({
-        currentTimerId: timerId,
-        updatedAt: now,
-      })
-      .where(eq(weddingEvent.id, targetTimer.weddingEventId));
-
-    // Notifier via Pusher
-    await pusher.trigger(CHANNEL, ACTION_UPDATED, {
-      timerId,
-      weddingEventId: targetTimer.weddingEventId,
-      startTime: startTime.toISOString(),
-    });
-
-    return { timerId, startTime };
-  }
 }
-
 // Export singleton
 export const timerService = new TimerService();
