@@ -16,6 +16,7 @@ import appCss from "@/styles.css?url";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { env } from "@/env/client";
 import { PusherProvider } from "@/lib/provider/puhser/pusher-provider";
 
 export const Route = createRootRouteWithContext<{
@@ -74,7 +75,7 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
             <Toaster richColors />
           </ThemeProvider>
         </PusherProvider>
-        {process.env.VERCEL_ENV !== "production" && (
+        {env.VITE_DEV_MODE && (
           <TanStackDevtools
             plugins={[
               {

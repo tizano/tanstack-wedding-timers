@@ -27,7 +27,7 @@ let pusherInstance: Pusher | null = null;
 const getPusherInstance = (): Pusher => {
   if (!pusherInstance) {
     // Configuration Pusher en mode développement uniquement
-    if (process.env.VERCEL_ENV !== "production") {
+    if (env.VITE_DEV_MODE) {
       Pusher.logToConsole = true;
     }
 

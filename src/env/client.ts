@@ -8,6 +8,7 @@ export const env = createEnv({
 
     VITE_PUSHER_KEY: z.string().min(1),
     VITE_PUSHER_CLUSTER: z.string().min(1),
+    VITE_DEV_MODE: z.boolean().default(true),
   },
   runtimeEnv: import.meta.env,
 });
