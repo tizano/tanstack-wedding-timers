@@ -98,7 +98,7 @@ function RouteComponent() {
     const mutationData = {
       id: timerId,
       name: data.name,
-      scheduledStartTime: scheduledStartTime,
+      scheduledStartTime: scheduledStartTime, // TODO: handle timezone properly
       durationMinutes: data.durationMinutes,
       lastModifiedById: user.id,
       updatedAt: new Date(),

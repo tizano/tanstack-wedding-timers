@@ -67,7 +67,7 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
         <PusherProvider>
           <ThemeProvider>
             {children}
-            <Toaster richColors />
+            <Toaster richColors position="top-center" />
           </ThemeProvider>
         </PusherProvider>
         {/* <DevTools /> */}
