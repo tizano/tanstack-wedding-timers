@@ -1,6 +1,8 @@
 import { TimerWithActions } from "@/lib/types/timer.type";
 import { formatTimezoneAgnosticDate } from "@/lib/utils";
-import { useNavigate } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { TimerWithActionsDemo } from "../demo/TimerWithActionsDemo";
 import { Button } from "../ui/button";
 import TimerDisplay from "./TimerDisplay";
 
@@ -10,6 +12,10 @@ function WeddingTimerSection({
   currentTimer: TimerWithActions | null;
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  // useTimerPolling("wedding-event-1");
+  const isDemo = location.pathname.includes("demo");
+  const [isClicked, setIsClicked] = useState(false);
 
   return (
     <section className="h-screen w-full overflow-hidden">
@@ -23,6 +29,11 @@ function WeddingTimerSection({
         ></video>
         <div className="absolute top-0 left-0 z-10 h-full w-full bg-black/70"></div>
         <div className="relative z-20 flex h-screen flex-col items-center justify-center gap-8">
+          {!isClicked && (
+            <Button onClick={() => setIsClicked(true)} variant="destructive">
+              Click me to enable video sound
+            </Button>
+          )}
           <h1 className="relative mb-4 text-center text-6xl font-bold text-gray-50">
             Tony & Neka
           </h1>
@@ -47,7 +58,7 @@ function WeddingTimerSection({
               <p className="text-sm opacity-60">
                 Statut: {currentTimer.status || "En attente"}
               </p>
-              <TimerDisplay timer={currentTimer} hideTitle />
+              <TimerDisplay timerData={currentTimer} hideTitle />
             </div>
           ) : (
             <div className="text-xl text-gray-300">Aucun timer programmé</div>
@@ -66,6 +77,7 @@ function WeddingTimerSection({
               Go to dashboard
             </Button>
           </div>
+          {isDemo && <TimerWithActionsDemo />}
         </div>
       </article>
     </section>

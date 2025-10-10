@@ -24,9 +24,6 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  // Active le polling pour vérifier les timers toutes les 30 secondes
-  // useTimerPolling("wedding-event-1");
-
   const { currentTimer } = usePusher();
 
   return (

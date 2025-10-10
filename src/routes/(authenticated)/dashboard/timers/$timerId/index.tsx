@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getTimerById, updateTimer } from "@/lib/actions/timer.action";
 import { UpdateTimer } from "@/lib/db/schema/timer.schema";
+import { convertToTimezoneAgnosticDate } from "@/lib/utils";
 import { DevTool } from "@hookform/devtools";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { queryOptions, useMutation, useSuspenseQuery } from "@tanstack/react-query";
@@ -42,14 +43,21 @@ function RouteComponent() {
   const router = useRouter();
   const canGoBack = useCanGoBack();
 
-  const userTimerMutation = useMutation({
+  const { mutate: timerMutation, isPending } = useMutation({
     mutationFn: async (
       data: UpdateTimer & {
         cascadeUpdate?: boolean;
         originalDurationMinutes?: number;
       },
     ) => {
-      return await updateTimer({ data: { ...data, id: timerId } });
+      console.log("Submitting with scheduledStartTime:", data);
+
+      return await updateTimer({
+        data: {
+          ...data,
+          id: timerId,
+        },
+      });
     },
     onSuccess: () => {
       // Navigate back to dashboard on success
@@ -92,13 +100,13 @@ function RouteComponent() {
 
   const onSubmit = async (data: UpdateTimerForm) => {
     const scheduledStartTime = data.scheduledStartTime
-      ? new Date(data.scheduledStartTime)
+      ? convertToTimezoneAgnosticDate(new Date(data.scheduledStartTime))
       : null;
 
     const mutationData = {
       id: timerId,
       name: data.name,
-      scheduledStartTime: scheduledStartTime, // TODO: handle timezone properly
+      scheduledStartTime: scheduledStartTime,
       durationMinutes: data.durationMinutes,
       lastModifiedById: user.id,
       updatedAt: new Date(),
@@ -106,7 +114,7 @@ function RouteComponent() {
       originalDurationMinutes: timer?.durationMinutes || 0,
     };
 
-    userTimerMutation.mutate(mutationData);
+    timerMutation(mutationData);
   };
 
   if (!timer) {
@@ -243,12 +251,12 @@ function RouteComponent() {
                     navigate({ to: "/dashboard" });
                   }
                 }}
-                disabled={userTimerMutation.isPending}
+                disabled={isPending}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={userTimerMutation.isPending}>
-                {userTimerMutation.isPending ? "Saving..." : "Save Changes"}
+              <Button type="submit" disabled={isPending}>
+                {isPending ? "Saving..." : "Save Changes"}
               </Button>
             </div>
           </form>

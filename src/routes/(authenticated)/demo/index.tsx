@@ -24,13 +24,8 @@ export const Route = createFileRoute("/(authenticated)/demo/")({
 });
 
 function DemoPage() {
-  // Active le polling pour vérifier les timers (toutes les 30 secondes)
   const { currentTimer } = usePusher();
   console.log("[DemoPage] currentTimer from PusherContext:", currentTimer);
-
-  // const { data: currentTimerr } = useSuspenseQuery(
-  //   currentTimerQueryOptions("wedding-event-demo"),
-  // );
 
   return (
     <main className="relative">

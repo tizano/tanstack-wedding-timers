@@ -92,6 +92,7 @@ async function seedWeddingData() {
       ownerId: createdUsers[0]?.id,
       createdAt: new Date(),
       updatedAt: new Date(),
+      currentTimerId: "timer-1",
     })
     .returning();
 
@@ -107,6 +108,7 @@ async function seedWeddingData() {
       ownerId: createdUsers[0]?.id,
       createdAt: new Date(),
       updatedAt: new Date(),
+      currentTimerId: "timer-demo-1",
     })
     .returning();
 

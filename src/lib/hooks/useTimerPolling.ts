@@ -1,7 +1,4 @@
-// import {
-//   checkAndStartPunctualTimers,
-//   checkAndStartWedding,
-// } from "@/lib/actions/timer.action";
+// import { checkAndStartWedding } from "@/lib/actions/timer.action";
 // import { useQueryClient } from "@tanstack/react-query";
 // import { useEffect, useRef } from "react";
 
@@ -40,11 +37,6 @@
 //             `[Timer Polling] ✅ Mariage démarré: ${weddingStartResult.timerName}`,
 //           );
 //         }
-
-//         // 2. Vérifier et démarrer les timers ponctuels
-//         await checkAndStartPunctualTimers({
-//           data: { weddingEventId },
-//         });
 
 //         // Invalider le cache pour forcer le rechargement des données
 //         queryClient.invalidateQueries({

@@ -19,7 +19,6 @@ export const Route = createFileRoute("/(authenticated)/dashboard/$weddingEventId
 function RouteComponent() {
   const { weddingEventId } = Route.useParams();
 
-  // Active le polling pour vérifier les timers toutes les 30 secondes
   const { data: timersWithActions, isLoading } = useSuspenseQuery(
     timersQueryOptions(weddingEventId),
   );

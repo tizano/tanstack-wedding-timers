@@ -52,13 +52,12 @@ export class TimerActionService {
     // S'il n'y a pas d'action suivante, retourne null (timer terminé)
     if (currentIndex >= actions.length - 1) {
       this.completeAction(actions[actions.length - 1].id);
+      // TODO : compléter le timer aussi, et mettre a jour le currentTimerId dans weddingEvent avec le suivant, mettre a jour startedAt et durationMinutes en fonction de l'heure reelle de fin du timer pour arriver a l'heure prevue de fin du timer, scheduledStartTime + durationMinutes (initial)
       return null;
     }
 
     // Retourne l'action suivante avec son timing
     const nextAction = actions[currentIndex + 1];
-    // const timings = await this.getActionsWithTiming(timerId);
-    // const nextActionTiming = timings.find((t) => t.actionId === nextAction.id);
 
     return {
       action: nextAction,

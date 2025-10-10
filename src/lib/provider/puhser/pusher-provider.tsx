@@ -56,6 +56,10 @@ interface PusherProviderProps {
 export function PusherProvider({ children }: PusherProviderProps) {
   const router = useRouter();
   const location = useLocation();
+  // useTimerPolling("wedding-event-1");
+  const weddingParams = location.pathname.includes("demo")
+    ? "wedding-event-demo"
+    : "wedding-event-1";
 
   const getCurrentTimerFn = useServerFn(getCurrentTimer);
   const {
@@ -63,13 +67,11 @@ export function PusherProvider({ children }: PusherProviderProps) {
     refetch: refetchCurrentTimer,
     isLoading,
   } = useQuery({
-    queryKey: ["currentTimer"],
+    queryKey: ["currentTimer", weddingParams],
     queryFn: () =>
       getCurrentTimerFn({
         data: {
-          weddingEventId: location.pathname.includes("demo")
-            ? "wedding-event-demo"
-            : "wedding-event-1",
+          weddingEventId: weddingParams,
         },
       }),
   });

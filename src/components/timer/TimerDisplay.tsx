@@ -1,98 +1,76 @@
-import { type Timer, type TimerAction } from "@/lib/db/schema/timer.schema";
-import { useEffect, useState } from "react";
-import TimerActionDemo from "../demo/TimerActionDemo";
+import { useTimerWithActions } from "@/lib/hooks/useTimerWithActions";
+import { TimerWithActions } from "@/lib/types/timer.type";
+import ActionDisplay from "./ActionDisplay";
 import TimerCountdown from "./TimerCountdown";
 
 interface TimerDisplayProps {
-  timer: Timer & { actions: TimerAction[] };
+  timerData: TimerWithActions;
   hideTitle?: boolean;
 }
 
-interface TimeLeft {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
-}
+const TimerDisplay = ({ timerData, hideTitle = false }: TimerDisplayProps) => {
+  // Utiliser le hook avec gestion des actions
+  const { timeLeft, isExpired, currentAction, nextAction, timeUntilNextAction } =
+    useTimerWithActions({
+      startTime: timerData.scheduledStartTime,
+      durationMinutes: timerData.durationMinutes ?? 0,
+      actions: timerData.actions,
+      onExpire: () => {
+        console.log("Timer expired for:", timerData.name);
+      },
+      onActionTrigger: (action) => {
+        console.log("Action triggered:", action.title, action.type);
+      },
+    });
 
-const TimerDisplay = ({ timer, hideTitle = false }: TimerDisplayProps) => {
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
+  console.log("TimerDisplay - Timer data:", {
+    name: timerData.name,
+    scheduledStartTime: timerData.scheduledStartTime,
+    durationMinutes: timerData.durationMinutes,
+    timeLeft,
+    isExpired,
+    currentAction: currentAction?.title,
+    nextAction: nextAction?.title,
+    timeUntilNextAction,
   });
-  const [currentAction, setCurrentAction] = useState<TimerAction | null>(null);
-
-  const calculateActionTriggerTime = (
-    startTime: Date,
-    durationMinutes: number,
-    triggerOffsetMinutes: number,
-  ): Date => {
-    if (triggerOffsetMinutes === 0) {
-      return new Date(startTime.getTime() + durationMinutes * 60000);
-    } else if (triggerOffsetMinutes < 0) {
-      return new Date(
-        startTime.getTime() + (durationMinutes + triggerOffsetMinutes) * 60000,
-      );
-    } else {
-      return new Date(startTime.getTime() + triggerOffsetMinutes * 60000);
-    }
-  };
-
-  useEffect(() => {
-    if (!timer.startedAt || !timer.durationMinutes) return;
-
-    const interval = setInterval(() => {
-      const now = new Date();
-      const endTime = new Date(
-        new Date(timer.startedAt!).getTime() + timer.durationMinutes! * 60000,
-      );
-      const diff = Math.floor((endTime.getTime() - now.getTime()) / 1000);
-
-      if (diff <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        clearInterval(interval);
-        return;
-      }
-
-      const days = Math.floor(diff / (24 * 3600));
-      const hours = Math.floor((diff % (24 * 3600)) / 3600);
-      const minutes = Math.floor((diff % 3600) / 60);
-      const seconds = diff % 60;
-
-      setTimeLeft({ days, hours, minutes, seconds });
-
-      // Vérifier si une action doit être affichée
-      const actionToShow = timer.actions.find((action) => {
-        if (action.executedAt) return false;
-
-        const actionTriggerTime = calculateActionTriggerTime(
-          timer.startedAt!,
-          timer.durationMinutes!,
-          action.triggerOffsetMinutes,
-        );
-
-        return now >= actionTriggerTime;
-      });
-
-      if (actionToShow && currentAction?.id !== actionToShow.id) {
-        setCurrentAction(actionToShow);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [timer, currentAction]);
 
   return (
     <div className="relative">
       <div className="space-y-6">
         <div className="text-center">
-          {!hideTitle && <h2 className="mb-2 text-4xl font-bold">{timer.name}</h2>}
-          {timer.status === "RUNNING" && <TimerCountdown timeLeft={timeLeft} />}
+          {!hideTitle && <h2 className="mb-2 text-4xl font-bold">{timerData.name}</h2>}
+
+          {/* Afficher le compte à rebours si en attente */}
+          {timerData.status === "PENDING" && !isExpired && (
+            <div className="mx-auto max-w-xs">
+              <TimerCountdown timeLeft={timeLeft} variant="large" />
+            </div>
+          )}
+
+          {/* Afficher l'action courante */}
+          {currentAction && (
+            <ActionDisplay
+              currentAction={currentAction}
+              actions={timerData.actions}
+              timeLeft={timeLeft}
+              timerId={timerData.id}
+              onActionComplete={() => {
+                console.log("Action completed, refreshing...");
+                // Le hook détectera automatiquement la prochaine action
+              }}
+            />
+          )}
+
+          {/* Info sur la prochaine action */}
+          {nextAction && !currentAction && (
+            <div className="text-muted-foreground mt-4 text-sm">
+              Prochaine action "{nextAction.contentEn}" dans{" "}
+              {Math.floor(timeUntilNextAction / 60)}m {timeUntilNextAction % 60}s pour
+              jouer {nextAction.type}
+            </div>
+          )}
         </div>
       </div>
-      <TimerActionDemo timerId={timer.id} />
     </div>
   );
 };

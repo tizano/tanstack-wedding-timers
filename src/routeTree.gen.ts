@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as authPagesLoginRouteImport } from './routes/(auth-pages)/login'
 import { Route as authenticatedDashboardRouteRouteImport } from './routes/(authenticated)/dashboard/route'
 import { Route as authenticatedDemoIndexRouteImport } from './routes/(authenticated)/demo/index'
+import { Route as authenticatedDashboardIndexRouteImport } from './routes/(authenticated)/dashboard/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as authenticatedDashboardWeddingEventIdIndexRouteImport } from './routes/(authenticated)/dashboard/$weddingEventId/index'
 import { Route as authenticatedDashboardTimersTimerIdIndexRouteImport } from './routes/(authenticated)/dashboard/timers/$timerId/index'
@@ -48,6 +49,12 @@ const authenticatedDemoIndexRoute = authenticatedDemoIndexRouteImport.update({
   path: '/demo/',
   getParentRoute: () => authenticatedRouteRoute,
 } as any)
+const authenticatedDashboardIndexRoute =
+  authenticatedDashboardIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => authenticatedDashboardRouteRoute,
+  } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -71,15 +78,16 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof authenticatedDashboardRouteRouteWithChildren
   '/login': typeof authPagesLoginRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/dashboard/': typeof authenticatedDashboardIndexRoute
   '/demo': typeof authenticatedDemoIndexRoute
   '/dashboard/$weddingEventId': typeof authenticatedDashboardWeddingEventIdIndexRoute
   '/dashboard/timers/$timerId': typeof authenticatedDashboardTimersTimerIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof authenticatedRouteRouteWithChildren
-  '/dashboard': typeof authenticatedDashboardRouteRouteWithChildren
   '/login': typeof authPagesLoginRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/dashboard': typeof authenticatedDashboardIndexRoute
   '/demo': typeof authenticatedDemoIndexRoute
   '/dashboard/$weddingEventId': typeof authenticatedDashboardWeddingEventIdIndexRoute
   '/dashboard/timers/$timerId': typeof authenticatedDashboardTimersTimerIdIndexRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/(authenticated)/dashboard': typeof authenticatedDashboardRouteRouteWithChildren
   '/(auth-pages)/login': typeof authPagesLoginRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/(authenticated)/dashboard/': typeof authenticatedDashboardIndexRoute
   '/(authenticated)/demo/': typeof authenticatedDemoIndexRoute
   '/(authenticated)/dashboard/$weddingEventId/': typeof authenticatedDashboardWeddingEventIdIndexRoute
   '/(authenticated)/dashboard/timers/$timerId/': typeof authenticatedDashboardTimersTimerIdIndexRoute
@@ -103,15 +112,16 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/api/auth/$'
+    | '/dashboard/'
     | '/demo'
     | '/dashboard/$weddingEventId'
     | '/dashboard/timers/$timerId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/dashboard'
     | '/login'
     | '/api/auth/$'
+    | '/dashboard'
     | '/demo'
     | '/dashboard/$weddingEventId'
     | '/dashboard/timers/$timerId'
@@ -123,6 +133,7 @@ export interface FileRouteTypes {
     | '/(authenticated)/dashboard'
     | '/(auth-pages)/login'
     | '/api/auth/$'
+    | '/(authenticated)/dashboard/'
     | '/(authenticated)/demo/'
     | '/(authenticated)/dashboard/$weddingEventId/'
     | '/(authenticated)/dashboard/timers/$timerId/'
@@ -179,6 +190,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authenticatedDemoIndexRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
+    '/(authenticated)/dashboard/': {
+      id: '/(authenticated)/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof authenticatedDashboardIndexRouteImport
+      parentRoute: typeof authenticatedDashboardRouteRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -216,12 +234,14 @@ const authPagesRouteRouteWithChildren = authPagesRouteRoute._addFileChildren(
 )
 
 interface authenticatedDashboardRouteRouteChildren {
+  authenticatedDashboardIndexRoute: typeof authenticatedDashboardIndexRoute
   authenticatedDashboardWeddingEventIdIndexRoute: typeof authenticatedDashboardWeddingEventIdIndexRoute
   authenticatedDashboardTimersTimerIdIndexRoute: typeof authenticatedDashboardTimersTimerIdIndexRoute
 }
 
 const authenticatedDashboardRouteRouteChildren: authenticatedDashboardRouteRouteChildren =
   {
+    authenticatedDashboardIndexRoute: authenticatedDashboardIndexRoute,
     authenticatedDashboardWeddingEventIdIndexRoute:
       authenticatedDashboardWeddingEventIdIndexRoute,
     authenticatedDashboardTimersTimerIdIndexRoute:

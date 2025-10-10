@@ -44,7 +44,7 @@ export class TimerService {
       .update(timer)
       .set({
         ...updateData,
-        updatedAt: new Date(),
+        updatedAt: convertToTimezoneAgnosticDate(new Date()),
       })
       .where(eq(timer.id, timerId))
       .returning();
@@ -118,6 +118,12 @@ export class TimerService {
     logger(`Starting wedding demo for event: ${weddingEventId}`);
 
     const now = new Date();
+    // logger("Current time without now: " + now);
+    // logger(
+    //   "Current time with convertToTimezoneAgnosticDate(now): " +
+    //     convertToTimezoneAgnosticDate(now),
+    // );
+    // logger("Current time with convertToLocalDate(now): " + convertToLocalDate(now));
 
     // 1. Reset tous les timers et actions du mariage
     await this.resetWeddingFromNormal(weddingEventId, weddingEventIdToCopyFrom);
@@ -137,6 +143,7 @@ export class TimerService {
     // 3. Calculer les scheduledStartTime pour chaque timer
     // Le premier timer commence maintenant
     let currentScheduledTime = now;
+    console.log("Initial now to updatedAt:", currentScheduledTime);
 
     for (let i = 0; i < allTimers.length; i++) {
       const currentTimer = allTimers[i];
@@ -157,7 +164,7 @@ export class TimerService {
       await db
         .update(timer)
         .set({
-          scheduledStartTime: currentScheduledTime,
+          scheduledStartTime: convertToTimezoneAgnosticDate(currentScheduledTime),
           updatedAt: now,
         })
         .where(eq(timer.id, currentTimer.id));
@@ -397,7 +404,7 @@ export class TimerService {
       });
 
       logger(
-        `[getCurrentTimer] Scheduled start time du timer trouvé : ${event?.currentTimerId} --- ${currentTimer?.scheduledStartTime}`,
+        `[getCurrentTimer] Scheduled start time du timer trouvé : ${event?.currentTimerId}`,
       );
 
       // logger(`Current timer retrieved: ${currentTimer ? currentTimer.name : "null"}`);
@@ -488,26 +495,21 @@ export class TimerService {
         );
       }
 
-      console.log("TUDUDUDUD --- ", sourceTimer.id, targetTimer.id);
-
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, weddingEventId, actions, ...timerData } = sourceTimer;
-      console.log(
-        `Resetting timer ${targetTimer.id} for wedding event ${weddingEventId}`,
-      );
+
       // Mettre à jour le timer
-      const [updatedTimer] = await db
+      await db
         .update(timer)
         .set({
           ...timerData,
           status: "PENDING",
           startedAt: null,
           completedAt: null,
-          updatedAt: convertToTimezoneAgnosticDate(now),
+          updatedAt: now,
         })
         .where(eq(timer.id, targetTimer.id))
         .returning();
-      console.log(updatedTimer);
     }
 
     // Reset toutes les actions
