@@ -5,21 +5,16 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { TimerAction } from "@/lib/db/schema/timer.schema";
 import { useTimerWithActions } from "@/lib/hooks/useTimerWithActions";
 import { createTimezoneAgnosticDate } from "@/lib/utils";
 import { useState } from "react";
+import ActionDisplay from "../timer/ActionDisplay";
 
 export function TimerWithActionsDemo() {
   // Créer un timer de test avec des actions
-  const [testStartTime, setTestStartTime] = useState<Date | null>(() => {
+  const [testStartTime] = useState<Date | null>(() => {
     const now = new Date();
     return createTimezoneAgnosticDate(
       now.getFullYear(),
@@ -31,21 +26,26 @@ export function TimerWithActionsDemo() {
     );
   });
 
-  const [testActions] = useState<TimerAction[]>([
+  // État pour forcer l'affichage d'une action manuellement
+  const [manualCurrentAction, setManualCurrentAction] = useState<TimerAction | null>(
+    null,
+  );
+
+  const [testActions, setTestActions] = useState<TimerAction[]>([
     {
       id: "action-1",
       timerId: "test-timer",
       type: "IMAGE",
       status: "PENDING",
-      triggerOffsetMinutes: 0.25, // 15 secondes après le début (0.25 * 60 = 15)
-      title: "Photo d'ouverture",
+      triggerOffsetMinutes: 0,
+      title: "",
       url: "/assets/images/jeu.png",
       urls: [],
-      contentFr: null,
-      contentEn: null,
-      contentBr: null,
+      contentFr: "Contenu en français pour la première action",
+      contentEn: "English content for the first action",
+      contentBr: "Conteúdo em português para a primeira ação",
       orderIndex: 0,
-      displayDurationSec: 10,
+      displayDurationSec: 30,
       createdAt: new Date(),
       executedAt: null,
     },
@@ -54,15 +54,15 @@ export function TimerWithActionsDemo() {
       timerId: "test-timer",
       type: "SOUND",
       status: "PENDING",
-      triggerOffsetMinutes: 0.5, // 30 secondes après le début
-      title: "Musique d'ambiance",
-      url: "/assets/sounds/audio-8-cosmic-love.mp3",
+      triggerOffsetMinutes: 0,
+      title: "",
+      url: "/assets/sounds/audio-1-atterrissage-tony.mp3",
       urls: [],
-      contentFr: null,
-      contentEn: null,
-      contentBr: null,
+      contentFr: "Contenu en français pour la deuxième action",
+      contentEn: "English content for the second action",
+      contentBr: "Conteúdo em português para a segunda ação",
       orderIndex: 1,
-      displayDurationSec: null,
+      displayDurationSec: 30,
       createdAt: new Date(),
       executedAt: null,
     },
@@ -71,86 +71,116 @@ export function TimerWithActionsDemo() {
       timerId: "test-timer",
       type: "VIDEO",
       status: "PENDING",
-      triggerOffsetMinutes: -0.5, // 30 secondes AVANT la fin (à 1min30 pour un timer de 2min)
+      triggerOffsetMinutes: 0,
       title: "Vidéo de clôture",
-      url: "/assets/videos/universe.mp4",
+      url: "/assets/videos/video-demo-with-sound.mp4",
       urls: [],
-      contentFr: null,
-      contentEn: null,
-      contentBr: null,
+      contentFr: "Contenu en français pour la troisième action",
+      contentEn: "English content for the third action",
+      contentBr: "Conteúdo em português para a terceira ação",
       orderIndex: 2,
-      displayDurationSec: 20,
+      displayDurationSec: 30,
       createdAt: new Date(),
       executedAt: null,
     },
     {
       id: "action-4",
       timerId: "test-timer",
-      type: "IMAGE",
+      type: "IMAGE_SOUND",
       status: "PENDING",
-      triggerOffsetMinutes: 0, // À la fin du timer
+      triggerOffsetMinutes: 0,
       title: "Image finale",
       url: "/assets/images/photomaton.png",
-      urls: [],
-      contentFr: null,
-      contentEn: null,
-      contentBr: null,
+      urls: ["/assets/images/telephone.png", "/assets/sounds/audio-6-telephone.mp3"],
+      contentFr: "Contenu en français pour la quatrième action",
+      contentEn: "English content for the fourth action",
+      contentBr: "Conteúdo em português para a quarta ação",
       orderIndex: 3,
-      displayDurationSec: 5,
+      displayDurationSec: 30,
       createdAt: new Date(),
       executedAt: null,
     },
   ]);
 
-  const {
-    timeLeft,
-    isExpired,
-    isRunning,
-    currentAction,
-    nextAction,
-    timeUntilNextAction,
-  } = useTimerWithActions({
-    startTime: testStartTime,
-    durationMinutes: 2, // Timer de 2 minutes
-    actions: testActions,
-    onExpire: () => {
-      console.log("🎉 Timer terminé!");
-    },
-    onActionTrigger: (action) => {
-      console.log("🎬 Action déclenchée:", action.title);
-    },
-  });
+  const { timeLeft, isExpired, isRunning, currentAction, nextAction } =
+    useTimerWithActions({
+      startTime: testStartTime,
+      durationMinutes: 2, // Timer de 2 minutes
+      actions: testActions,
+      onExpire: () => {
+        console.log("🎉 Timer terminé!");
+        setManualCurrentAction(null);
+      },
+      onActionTrigger: (action) => {
+        console.log("🎬 Action déclenchée:", action.title);
+      },
+    });
 
-  const handleStartNow = () => {
-    const now = new Date();
-    setTestStartTime(
-      createTimezoneAgnosticDate(
-        now.getFullYear(),
-        now.getMonth() + 1,
-        now.getDate(),
-        now.getHours(),
-        now.getMinutes(),
-        now.getSeconds(),
-      ),
+  const handleClickStartAction = (action: TimerAction) => {
+    console.log("Starting action manually:", action);
+
+    // Forcer cette action à être affichée manuellement
+    setManualCurrentAction(action);
+
+    // Mettre à jour le tableau d'actions pour marquer le statut
+    setTestActions((prevActions) =>
+      prevActions.map((a) => {
+        if (a.id === action.id) {
+          // Marquer l'action cliquée comme en cours d'exécution
+          return {
+            ...a,
+            status: "RUNNING" as const,
+            executedAt: null, // Pas encore terminée
+          };
+        }
+        // Marquer les autres actions comme en attente ou complétées
+        if (a.status === "RUNNING") {
+          return {
+            ...a,
+            status: "COMPLETED" as const,
+            executedAt: new Date(),
+          };
+        }
+        return a;
+      }),
     );
   };
 
-  const handleReset = () => {
-    setTestStartTime(null);
+  const handleActionComplete = () => {
+    console.log("Action completed");
+
+    // Marquer l'action courante comme terminée
+    const actionToComplete = manualCurrentAction || currentAction;
+    if (actionToComplete) {
+      setTestActions((prevActions) =>
+        prevActions.map((a) => {
+          if (a.id === actionToComplete.id) {
+            return {
+              ...a,
+              status: "COMPLETED" as const,
+              executedAt: new Date(),
+            };
+          }
+          return a;
+        }),
+      );
+      // Réinitialiser l'action manuelle
+      setManualCurrentAction(null);
+    }
   };
 
+  // Utiliser l'action manuelle si définie, sinon l'action du hook
+  const displayedAction = manualCurrentAction || currentAction;
+
   return (
-    <Card className="mx-auto w-full max-w-3xl">
+    <Card className="mx-auto w-full max-w-3xl gap-3">
       <CardHeader>
-        <CardTitle>Test du Timer avec Actions</CardTitle>
-        <CardDescription>
-          Démonstration du déclenchement d'actions selon leur triggerOffsetMinutes
-        </CardDescription>
+        <CardTitle>Test des Actions</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-2">
         {/* Informations du timer */}
-        <div className="bg-muted rounded-lg p-4">
-          <h3 className="mb-2 font-semibold">Timer (2 minutes)</h3>
+        <div className="bg-muted rounded-lg px-4 py-2">
+          <h3 className="mb-2 font-semibold">Timer</h3>
           <div className="space-y-1 text-sm">
             <p>
               <span className="text-muted-foreground">Status:</span>{" "}
@@ -172,9 +202,9 @@ export function TimerWithActionsDemo() {
         {/* Liste des actions */}
         <div className="space-y-2">
           <h3 className="font-semibold">Actions programmées</h3>
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             {testActions.map((action) => {
-              const isCurrent = currentAction?.id === action.id;
+              const isCurrent = displayedAction?.id === action.id;
               const isNext = nextAction?.id === action.id;
 
               let triggerText = "";
@@ -209,6 +239,15 @@ export function TimerWithActionsDemo() {
                         Déclenchement: {triggerText}
                       </p>
                     </div>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        // start the action
+                        handleClickStartAction(action);
+                      }}
+                    >
+                      Trigger
+                    </Button>
                   </div>
                 </div>
               );
@@ -216,71 +255,31 @@ export function TimerWithActionsDemo() {
           </div>
         </div>
 
-        {/* Prochaine action */}
-        {nextAction && (
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
-            <h4 className="mb-2 font-semibold text-blue-900 dark:text-blue-100">
-              Prochaine action
-            </h4>
-            <p className="text-sm text-blue-800 dark:text-blue-200">
-              "{nextAction.title}" dans{" "}
-              <span className="font-bold">
-                {Math.floor(timeUntilNextAction / 60)}m {timeUntilNextAction % 60}s
-              </span>
-            </p>
-          </div>
-        )}
-
         {/* Action courante */}
-        {currentAction && (
-          <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
-            <h4 className="mb-2 font-semibold text-green-900 dark:text-green-100">
-              ⚡ Action en cours
-            </h4>
-            <p className="text-sm text-green-800 dark:text-green-200">
-              <strong>{currentAction.title}</strong> ({currentAction.type})
-            </p>
-            {currentAction.displayDurationSec && (
-              <p className="mt-1 text-xs text-green-700 dark:text-green-300">
-                Durée d'affichage: {currentAction.displayDurationSec}s
+        {displayedAction && (
+          <>
+            <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
+              <h4 className="mb-2 font-semibold text-green-900 dark:text-green-100">
+                ⚡ Action en cours {manualCurrentAction && "(Manuel)"}
+              </h4>
+              <p className="text-sm text-green-800 dark:text-green-200">
+                <strong>{displayedAction.title}</strong> ({displayedAction.type})
               </p>
-            )}
-          </div>
+              {displayedAction.displayDurationSec != null && (
+                <p className="mt-1 text-xs text-green-700 dark:text-green-300">
+                  Durée d'affichage: {displayedAction.displayDurationSec}s
+                </p>
+              )}
+            </div>
+            <ActionDisplay
+              currentAction={displayedAction}
+              actions={testActions}
+              timeLeft={timeLeft}
+              timerId="test-timer"
+              onActionComplete={handleActionComplete}
+            />
+          </>
         )}
-
-        {/* Boutons de contrôle */}
-        <div className="grid grid-cols-2 gap-4">
-          <Button onClick={handleStartNow} variant="default">
-            Démarrer maintenant
-          </Button>
-          <Button onClick={handleReset} variant="destructive">
-            Réinitialiser
-          </Button>
-        </div>
-
-        {/* Explication */}
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950">
-          <h4 className="mb-2 font-semibold text-amber-900 dark:text-amber-100">
-            💡 Comment ça fonctionne
-          </h4>
-          <ul className="space-y-1 text-sm text-amber-800 dark:text-amber-200">
-            <li>
-              • <strong>triggerOffsetMinutes positif</strong>: déclenchement X minutes
-              après le début
-            </li>
-            <li>
-              • <strong>triggerOffsetMinutes = 0</strong>: déclenchement à la fin du timer
-            </li>
-            <li>
-              • <strong>triggerOffsetMinutes négatif</strong>: déclenchement X minutes
-              avant la fin
-            </li>
-            <li>• Les actions sont déclenchées automatiquement au bon moment</li>
-            <li>
-              • Le hook gère la détection de l'action courante et de la prochaine action
-            </li>
-          </ul>
-        </div>
       </CardContent>
     </Card>
   );

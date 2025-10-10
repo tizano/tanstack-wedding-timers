@@ -62,12 +62,7 @@ export default function TimerList({ timersWithActions, isDemo }: TimerListProps)
       <div className="mb-4">{renderDemoButtons()}</div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {timersWithActions.map((timer) => (
-          <TimerCard
-            key={timer.id}
-            timerData={timer}
-            actionsData={timer.actions}
-            isDemo={isDemo}
-          />
+          <TimerCard key={timer.id} timerData={timer} isDemo={isDemo} />
         ))}
       </div>
     </>

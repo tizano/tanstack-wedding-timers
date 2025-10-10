@@ -1,4 +1,4 @@
-import { type Timer, type TimerAction } from "@/lib/db/schema/timer.schema";
+import { type Timer } from "@/lib/db/schema/timer.schema";
 
 import {
   Card,
@@ -8,11 +8,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { updateTimer } from "@/lib/actions/timer.action";
+import { useTimerWithActions } from "@/lib/hooks/useTimerWithActions";
+import { TimerWithActions } from "@/lib/types/timer.type";
 import { cn, formatTimezoneAgnosticDate } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Calendar, Clock } from "lucide-react";
-import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import ActionList from "../timer/ActionList";
 import TimerCountdown from "../timer/TimerCountdown";
@@ -20,28 +21,26 @@ import { Button } from "../ui/button";
 import StatusBadge from "./StatusBadge";
 
 type TimerCardProps = {
-  timerData: Timer;
-  actionsData: TimerAction[];
+  timerData: TimerWithActions;
+
   isDemo?: boolean;
 };
 
-interface TimeLeft {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
-}
-
-export default function TimerCard({ timerData, actionsData, isDemo }: TimerCardProps) {
+export default function TimerCard({ timerData, isDemo }: TimerCardProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
+
+  const { timeLeft, isExpired } = useTimerWithActions({
+    startTime: timerData.scheduledStartTime,
+    durationMinutes: timerData.durationMinutes ?? 0,
+    actions: timerData.actions,
+    onExpire: () => {
+      console.log("Timer expired for:", timerData.name);
+    },
+    onActionTrigger: (action) => {
+      console.log("Action triggered:", action.title, action.type);
+    },
   });
-  const [isExpired, setIsExpired] = useState(false);
 
   const isManualTimer =
     timerData.durationMinutes === 0 && timerData.scheduledStartTime === null;
@@ -85,36 +84,6 @@ export default function TimerCard({ timerData, actionsData, isDemo }: TimerCardP
   const handleStartTimer = () => {
     mutate();
   };
-
-  useEffect(() => {
-    if (!timerData.scheduledStartTime) return;
-    const calculateTimeLeft = () => {
-      const targetTime =
-        timerData.scheduledStartTime !== null
-          ? new Date(timerData.scheduledStartTime).getTime()
-          : 0;
-      const now = new Date().getTime();
-      const difference = targetTime - now;
-
-      if (difference > 0) {
-        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-        setTimeLeft({ days, hours, minutes, seconds });
-        setIsExpired(false);
-      } else {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        setIsExpired(true);
-      }
-    };
-
-    calculateTimeLeft();
-    const timer = setInterval(calculateTimeLeft, 1000);
-
-    return () => clearInterval(timer);
-  }, [timerData.scheduledStartTime]);
 
   const renderCountdown = () => {
     if (timerIsStarted) {
@@ -253,7 +222,7 @@ export default function TimerCard({ timerData, actionsData, isDemo }: TimerCardP
         {renderTriggerActionButton()}
 
         {/* Actions */}
-        <ActionList actions={actionsData} />
+        <ActionList actions={timerData.actions} />
       </CardContent>
       <CardFooter className="flex-1 items-end">
         <Button

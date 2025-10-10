@@ -23,16 +23,16 @@ const TimerDisplay = ({ timerData, hideTitle = false }: TimerDisplayProps) => {
       },
     });
 
-  console.log("TimerDisplay - Timer data:", {
-    name: timerData.name,
-    scheduledStartTime: timerData.scheduledStartTime,
-    durationMinutes: timerData.durationMinutes,
-    timeLeft,
-    isExpired,
-    currentAction: currentAction?.title,
-    nextAction: nextAction?.title,
-    timeUntilNextAction,
-  });
+  // console.log("TimerDisplay - Timer data:", {
+  //   name: timerData.name,
+  //   scheduledStartTime: timerData.scheduledStartTime,
+  //   durationMinutes: timerData.durationMinutes,
+  //   timeLeft,
+  //   isExpired,
+  //   currentAction: currentAction?.title,
+  //   nextAction: nextAction?.title,
+  //   timeUntilNextAction,
+  // });
 
   return (
     <div className="relative">
