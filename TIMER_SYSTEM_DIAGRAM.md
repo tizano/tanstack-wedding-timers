@@ -187,7 +187,7 @@ App
         │   └─ Reçoit currentAction & actions
         │
         ├─ VideoAction (si type === "VIDEO")
-        ├─ AudioAction (si type === "SOUND")
+        ├─ SoundAction (si type === "SOUND")
         ├─ ImageAction (si type === "IMAGE")
         ├─ GalleryAction (si type === "GALLERY")
         └─ ImageWithSound (si type === "IMAGE_SOUND")

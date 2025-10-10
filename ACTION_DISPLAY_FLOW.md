@@ -171,7 +171,7 @@ Détection: IMAGE existe avant SOUND?
     ├─ OUI → Affiche ImageWithSound
     │         (Image de l'action 1 + Son de l'action 2)
     │
-    └─ NON → Affiche AudioAction simple
+    └─ NON → Affiche SoundAction simple
               (Juste le son)
 ```
 
@@ -270,7 +270,7 @@ interface ActionDisplayProps {
 
 ### Composants Média Enfants
 
-Tous les composants média (VideoAction, ImageAction, AudioAction, etc.) suivent la même interface:
+Tous les composants média (VideoAction, ImageAction, SoundAction, etc.) suivent la même interface:
 
 ```typescript
 interface MediaActionProps {

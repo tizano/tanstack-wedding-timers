@@ -1,54 +1,60 @@
-import { useEffect, useRef, useState } from "react";
+import { TimerAction } from "@/lib/db/schema/timer.schema";
+import { useCallback, useRef, useState } from "react";
 
-interface ImageWithSoundProps {
-  imageUrl: string;
-  soundUrl: string;
-  title?: string;
-  onComplete?: () => void;
+interface ImageWithSoundActionProps {
+  action: TimerAction;
+  onMediaComplete?: () => void;
 }
 
 /**
- * Composant qui affiche une image et joue un son simultanément.
- * L'image se ferme automatiquement à la fin du son.
+ * Composant qui joue un fichier audio avec contrôles.
+ * Se ferme automatiquement après la fin de l'audio + displayDuration.
  */
-const ImageWithSound = ({
-  imageUrl,
-  soundUrl,
-  title,
-  onComplete,
-}: ImageWithSoundProps) => {
+const ImageWithSound = ({ action, onMediaComplete }: ImageWithSoundActionProps) => {
+  const { urls } = action;
   const audioRef = useRef<HTMLAudioElement>(null);
   const [audioEnded, setAudioEnded] = useState(false);
 
-  useEffect(() => {
-    if (audioEnded) {
-      onComplete?.();
-    }
-  }, [audioEnded, onComplete]);
+  const handleComplete = useCallback(() => {
+    console.log(`Audio action ${action.id} completed.`);
+    onMediaComplete?.();
+  }, [action.id, onMediaComplete]);
 
   const handleAudioEnd = () => {
     setAudioEnded(true);
+    handleComplete();
   };
 
+  const getMediaByUrl = (mediaUrls: string[]) => {
+    if (mediaUrls.length === 0) return null;
+    const imageUrl = mediaUrls.find((url) => url.match(/\.(jpeg|jpg|gif|png|svg)$/));
+    const audioUrl = mediaUrls.find((url) => url.match(/\.(mp3|wav|ogg)$/));
+
+    return { imageUrl, audioUrl };
+  };
+
+  const { imageUrl, audioUrl } = getMediaByUrl(urls) || {};
+
   return (
-    <div className="flex flex-col items-center gap-6">
-      {title && <h2 className="text-center text-3xl font-bold text-white">{title}</h2>}
+    <div className="flex flex-col items-center gap-4">
+      {imageUrl && (
+        <img
+          src={imageUrl}
+          alt={action.title || "Image"}
+          className="max-h-[60vh] max-w-full rounded-lg shadow-2xl"
+        />
+      )}
 
-      <img
-        src={imageUrl}
-        alt={title || "Image"}
-        className="max-h-[60vh] max-w-full rounded-lg shadow-2xl"
-      />
-
-      <audio
-        ref={audioRef}
-        src={soundUrl}
-        autoPlay
-        onEnded={handleAudioEnd}
-        className="hidden"
-      />
-
-      {audioEnded && <div className="text-sm text-white/60">Fermeture...</div>}
+      {audioUrl && (
+        <audio
+          ref={audioRef}
+          src={audioUrl}
+          autoPlay
+          controls
+          onEnded={handleAudioEnd}
+          className="w-full max-w-md opacity-0"
+        />
+      )}
     </div>
   );
 };

@@ -3,24 +3,21 @@ import { useCallback, useRef, useState } from "react";
 
 interface VideoActionProps {
   action: TimerAction;
-  onComplete?: () => void;
+  onMediaComplete?: () => void;
 }
 
 /**
  * Composant qui affiche une vidéo avec contrôles.
- * Se ferme automatiquement après la fin de la vidéo + displayDuration.
  */
-const VideoAction = ({ action, onComplete }: VideoActionProps) => {
+const VideoAction = ({ action, onMediaComplete }: VideoActionProps) => {
   const { url } = action;
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoEnded, setVideoEnded] = useState(false);
 
   const handleComplete = useCallback(() => {
     console.log(`Video action ${action.id} completed.`);
-    // call next action in server
-    // getNextActionFromCurrent({ data: { timerId: action.timerId, actionId: action.id } });
-    onComplete?.();
-  }, [action.id, action.timerId, onComplete]);
+    onMediaComplete?.();
+  }, [action.id, onMediaComplete]);
 
   const handleVideoEnd = () => {
     setVideoEnded(true);
@@ -38,7 +35,7 @@ const VideoAction = ({ action, onComplete }: VideoActionProps) => {
         playsInline
         preload="auto"
         onEnded={handleVideoEnd}
-        className="max-h-[60vh] max-w-full rounded-lg shadow-2xl"
+        className="max-h-[80vh] max-w-full rounded-lg shadow-2xl"
       />
     </div>
   );

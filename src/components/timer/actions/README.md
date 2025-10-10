@@ -36,7 +36,7 @@ Chaque type d'action a son propre composant dédié :
 }
 ```
 
-#### 2. **AudioAction** (`AudioAction.tsx`)
+#### 2. **SoundAction** (`SoundAction.tsx`)
 
 - Affiche un lecteur audio avec contrôles
 - Gère la fin automatique après `displayDurationSec` secondes
@@ -112,7 +112,7 @@ Dans `ActionDisplay`, si une action de type `SOUND` a à la fois :
 - `action.url` (le son)
 - `action.urls[0]` (l'image)
 
-Alors `ImageWithSound` est utilisé au lieu d'`AudioAction`.
+Alors `ImageWithSound` est utilisé au lieu d'`SoundAction`.
 
 ## Flux de Données
 
@@ -121,7 +121,7 @@ TimerAction (from database)
     ↓
 ActionDisplay (dispatcher)
     ↓
-[VideoAction | AudioAction | ImageAction | GalleryAction | ImageWithSound]
+[VideoAction | SoundAction | ImageAction | GalleryAction | ImageWithSound]
     ↓
 onComplete callback
     ↓

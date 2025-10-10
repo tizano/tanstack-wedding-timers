@@ -26,6 +26,38 @@ export default function ActionList({ actions, isDemo, onActionStart }: ActionLis
         return null;
     }
   };
+
+  const renderActionUrl = (action: TimerAction) => {
+    const stringToReplace = /\/assets\/(images|sounds|videos)/;
+    if (action.urls.length) {
+      return (
+        <ul>
+          {action.urls.map((url) => (
+            <li key={url}>{url.replace(stringToReplace, "")}</li>
+          ))}
+        </ul>
+      );
+    }
+    if (action.url) {
+      return action.url.replace(stringToReplace, "");
+    }
+    return "No asset found";
+  };
+
+  const renderTriggerText = (action: TimerAction) => {
+    if (action.triggerOffsetMinutes === 0 && action.triggerOffsetMinutes === null) {
+      return <span>Triggers start at the end of the timer</span>;
+    }
+    if (action.triggerOffsetMinutes < 0) {
+      return (
+        <span>
+          Trigger {Math.abs(action.triggerOffsetMinutes)} minutes before the end
+        </span>
+      );
+    }
+    return <span>Trigger manually</span>;
+  };
+
   return (
     <div className="space-y-3">
       <h3 className="text-center text-lg font-semibold">Scheduled Actions</h3>
@@ -37,12 +69,16 @@ export default function ActionList({ actions, isDemo, onActionStart }: ActionLis
               <div className="pr-28 font-medium">{action.contentEn}</div>
               <div className="text-muted-foreground flex flex-col gap-1 text-sm">
                 <span>
-                  {action.type} •{" "}
-                  {action.displayDurationSec !== null && (
-                    <span> • {action.displayDurationSec}s</span>
-                  )}
+                  {action.type} • {renderActionUrl(action)}
                 </span>
-                <span>{action.url}</span>
+                {action.displayDurationSec !== null && (
+                  <span>
+                    {" "}
+                    Display content during {action.displayDurationSec}s after the media
+                    end
+                  </span>
+                )}
+                {renderTriggerText(action)}
               </div>
               {!isDemo && (
                 <div className="absolute top-0 right-0">

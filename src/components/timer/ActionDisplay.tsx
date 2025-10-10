@@ -2,7 +2,7 @@ import { type TimerAction } from "@/lib/db/schema/timer.schema";
 import { TimeLeft } from "@/lib/hooks/useTimerWithActions";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { AudioAction, GalleryAction, ImageAction, VideoAction } from "./actions";
+import { ImageAction, ImageWithSound, SoundAction, VideoAction } from "./actions";
 import ContentAction from "./actions/ContentAction";
 import TimerCountdown from "./TimerCountdown";
 
@@ -138,50 +138,33 @@ const ActionDisplay = ({
   const renderMediaContent = () => {
     switch (currentAction.type) {
       case "VIDEO":
-        return <VideoAction action={currentAction} onComplete={handleMediaComplete} />;
+        return (
+          <VideoAction action={currentAction} onMediaComplete={handleMediaComplete} />
+        );
 
       case "SOUND":
         return (
-          <AudioAction
-            url={currentAction.url || ""}
-            title={currentAction.title || undefined}
-            displayDurationSec={currentAction.displayDurationSec || undefined}
-            onComplete={handleMediaComplete}
-          />
+          <SoundAction action={currentAction} onMediaComplete={handleMediaComplete} />
         );
       case "IMAGE_SOUND":
         return (
-          <>
-            <div className="bg-black/70 p-4">TODO : fix ImageWithSound component</div>
-          </>
-          // <ImageWithSound
-          //   imageUrl={currentAction.url || ""}
-          //   soundUrl={currentAction.soundUrl || ""}
-          //   title={currentAction.title || undefined}
-          //   displayDurationSec={currentAction.displayDurationSec || undefined}
-          //   onComplete={handleMediaComplete}
-          // />
+          <ImageWithSound action={currentAction} onMediaComplete={handleMediaComplete} />
         );
 
       case "IMAGE":
         return (
-          <ImageAction
-            url={currentAction.url || ""}
-            title={currentAction.title || undefined}
-            displayDurationSec={currentAction.displayDurationSec || undefined}
-            onComplete={handleMediaComplete}
-          />
+          <ImageAction action={currentAction} onMediaComplete={handleMediaComplete} />
         );
 
-      case "GALLERY":
-        return (
-          <GalleryAction
-            urls={currentAction.urls}
-            title={currentAction.title || undefined}
-            displayDurationSec={currentAction.displayDurationSec || undefined}
-            onComplete={handleMediaComplete}
-          />
-        );
+      // case "GALLERY":
+      //   return (
+      //     <GalleryAction
+      //       urls={currentAction.urls}
+      //       title={currentAction.title || undefined}
+      //       displayDurationSec={currentAction.displayDurationSec || undefined}
+      //       onComplete={handleMediaComplete}
+      //     />
+      //   );
 
       default:
         return (
@@ -224,45 +207,33 @@ const ActionDisplay = ({
     );
   };
 
-  const renderMedia = () => {
-    console.log("Render media content:", { showMediaContent });
-    if (!showMediaContent) return null;
-    return <>Tudum</>;
-  };
-
   return (
     <>
       <div
         className={cn(
-          "pointer-events-auto fixed inset-0 z-50 flex items-center justify-center bg-black/70 opacity-100 backdrop-blur-sm transition-all duration-500",
+          currentAction.type !== "SOUND" &&
+            "pointer-events-auto fixed inset-0 z-50 flex items-center justify-center bg-black/70 opacity-100 backdrop-blur-sm transition-all duration-500",
           !showMediaContent && "pointer-events-none -z-50 opacity-0 transition-all",
         )}
       >
-        <div className="flex w-full max-w-4xl flex-col items-center gap-6 p-8">
-          {/* Titre de l'action si présent */}
-          {currentAction.title && showMediaContent && (
-            <h2 className="mb-4 text-center text-3xl font-bold text-white">
-              {currentAction.title}
-            </h2>
+        <div
+          className={cn(
+            "flex w-full max-w-4xl flex-col items-center gap-6 p-8",
+            currentAction.type === "VIDEO" && "max-w-screen",
           )}
-
-          {/* Contenu média (vidéo/image/son/galerie) */}
-          {renderMediaContent()}
-
+        >
           {/* Mini timer si offset négatif (action avant la fin) */}
           {shouldShowMiniTimer && showMediaContent && (
-            <div className="mt-6 rounded-lg bg-black/50 p-4">
-              <p className="mb-2 text-center text-sm text-white/70">
-                Temps restant du timer
-              </p>
+            <div className="mt-6 rounded-lg bg-black/50 p-4 text-gray-100 backdrop-blur-md">
               <TimerCountdown timeLeft={timeLeft} variant="small" />
             </div>
           )}
+          {/* Contenu média (vidéo/image/son/galerie) */}
+          {renderMediaContent()}
 
           {/* Contenu textuel multilingue après le média */}
         </div>
       </div>
-      {renderMedia()}
       {renderTextContent()}
     </>
   );
