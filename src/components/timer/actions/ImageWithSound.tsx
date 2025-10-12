@@ -41,7 +41,7 @@ const ImageWithSound = ({ action, onMediaComplete }: ImageWithSoundActionProps) 
         <img
           src={imageUrl}
           alt={action.title || "Image"}
-          className="max-h-[60vh] max-w-full rounded-lg shadow-2xl"
+          className="max-h-[60vh] max-w-full"
         />
       )}
 

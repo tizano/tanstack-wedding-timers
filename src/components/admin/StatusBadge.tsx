@@ -1,12 +1,5 @@
-import type { STATUSES } from "@/lib/db/schema/timer.schema";
+import { TimerStatus } from "@/lib/types/timer.type";
 import { Badge } from "../ui/badge";
-
-type TimerStatus =
-  | (typeof STATUSES)[number]
-  | "EXECUTED"
-  | "NOT_EXECUTED"
-  | "MANUAL"
-  | "PUNCTUAL";
 
 type StatusBadgeProps = {
   status: TimerStatus;

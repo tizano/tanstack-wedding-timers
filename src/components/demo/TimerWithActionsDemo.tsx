@@ -4,13 +4,14 @@
  */
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { TimerAction } from "@/lib/db/schema/timer.schema";
 import { useTimerWithActions } from "@/lib/hooks/useTimerWithActions";
-import { createTimezoneAgnosticDate } from "@/lib/utils";
+import { cn, createTimezoneAgnosticDate } from "@/lib/utils";
 import { useState } from "react";
 import ActionDisplay from "../timer/ActionDisplay";
+import ActionList from "../timer/ActionList";
+import { timersData } from "./timersData.mock";
 
 export function TimerWithActionsDemo() {
   // Créer un timer de test avec des actions
@@ -31,76 +32,7 @@ export function TimerWithActionsDemo() {
     null,
   );
 
-  const [testActions, setTestActions] = useState<TimerAction[]>([
-    {
-      id: "action-1",
-      timerId: "test-timer",
-      type: "IMAGE",
-      status: "PENDING",
-      triggerOffsetMinutes: 0,
-      title: "",
-      url: "/assets/images/jeu.png",
-      urls: [],
-      contentFr: "Contenu en français pour la première action",
-      contentEn: "English content for the first action",
-      contentBr: "Conteúdo em português para a primeira ação",
-      orderIndex: 0,
-      displayDurationSec: 30,
-      createdAt: new Date(),
-      executedAt: null,
-    },
-    {
-      id: "action-2",
-      timerId: "test-timer",
-      type: "SOUND",
-      status: "PENDING",
-      triggerOffsetMinutes: 0,
-      title: "",
-      url: "/assets/sounds/audio-1-atterrissage-tony.mp3",
-      urls: [],
-      contentFr: "Contenu en français pour la deuxième action",
-      contentEn: "English content for the second action",
-      contentBr: "Conteúdo em português para a segunda ação",
-      orderIndex: 1,
-      displayDurationSec: 30,
-      createdAt: new Date(),
-      executedAt: null,
-    },
-    {
-      id: "action-3",
-      timerId: "test-timer",
-      type: "VIDEO",
-      status: "PENDING",
-      triggerOffsetMinutes: 0,
-      title: "Vidéo de clôture",
-      url: "/assets/videos/video-demo-with-sound.mp4",
-      urls: [],
-      contentFr: "Contenu en français pour la troisième action",
-      contentEn: "English content for the third action",
-      contentBr: "Conteúdo em português para a terceira ação",
-      orderIndex: 2,
-      displayDurationSec: 30,
-      createdAt: new Date(),
-      executedAt: null,
-    },
-    {
-      id: "action-4",
-      timerId: "test-timer",
-      type: "IMAGE_SOUND",
-      status: "PENDING",
-      triggerOffsetMinutes: 0,
-      title: "Image finale",
-      url: "/assets/images/photomaton.png",
-      urls: ["/assets/images/telephone.png", "/assets/sounds/audio-6-telephone.mp3"],
-      contentFr: "Contenu en français pour la quatrième action",
-      contentEn: "English content for the fourth action",
-      contentBr: "Conteúdo em português para a quarta ação",
-      orderIndex: 3,
-      displayDurationSec: 30,
-      createdAt: new Date(),
-      executedAt: null,
-    },
-  ]);
+  const [testActions, setTestActions] = useState<TimerAction[]>(timersData);
 
   const { timeLeft, isExpired, isRunning, currentAction, nextAction } =
     useTimerWithActions({
@@ -173,95 +105,42 @@ export function TimerWithActionsDemo() {
   const displayedAction = manualCurrentAction || currentAction;
 
   return (
-    <Card className="mx-auto w-full max-w-3xl gap-3">
+    <Card className="mx-auto w-full max-w-5xl gap-3">
       <CardHeader>
         <CardTitle>Test des Actions</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         {/* Informations du timer */}
-        <div className="bg-muted rounded-lg px-4 py-2">
-          <h3 className="mb-2 font-semibold">Timer</h3>
-          <div className="space-y-1 text-sm">
-            <p>
-              <span className="text-muted-foreground">Status:</span>{" "}
-              <Badge
-                variant={isRunning ? "RUNNING" : isExpired ? "EXECUTED" : "NOT_EXECUTED"}
-              >
-                {isRunning ? "En cours" : isExpired ? "Expiré" : "En attente"}
-              </Badge>
-            </p>
-            <p>
-              <span className="text-muted-foreground">Temps restant:</span>{" "}
-              <span className="font-mono font-bold">
-                {timeLeft.minutes}m {timeLeft.seconds}s
-              </span>
-            </p>
-          </div>
-        </div>
-
-        {/* Liste des actions */}
-        <div className="space-y-2">
-          <h3 className="font-semibold">Actions programmées</h3>
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-            {testActions.map((action) => {
-              const isCurrent = displayedAction?.id === action.id;
-              const isNext = nextAction?.id === action.id;
-
-              let triggerText = "";
-              if (action.triggerOffsetMinutes === 0) {
-                triggerText = "à la fin";
-              } else if (action.triggerOffsetMinutes < 0) {
-                triggerText = `${Math.abs(action.triggerOffsetMinutes)} min avant la fin`;
-              } else {
-                triggerText = `${action.triggerOffsetMinutes} min après le début`;
-              }
-
-              return (
-                <div
-                  key={action.id}
-                  className={`rounded-lg border p-3 ${
-                    isCurrent
-                      ? "border-green-500 bg-green-50 dark:bg-green-950"
-                      : isNext
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-950"
-                        : "border-border"
-                  }`}
+        <div
+          className={cn("grid grid-cols-1 gap-4", displayedAction && "lg:grid-cols-2")}
+        >
+          <div className="bg-muted rounded-lg px-4 py-2 transition-all">
+            <h3 className="mb-2 font-semibold">Timer</h3>
+            <div className="space-y-1 text-sm">
+              <p>
+                <span className="text-muted-foreground">Status:</span>{" "}
+                <Badge
+                  variant={
+                    isRunning ? "RUNNING" : isExpired ? "EXECUTED" : "NOT_EXECUTED"
+                  }
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{action.title}</span>
-                        <Badge variant="RUNNING">{action.type}</Badge>
-                        {isCurrent && <Badge variant="RUNNING">EN COURS</Badge>}
-                        {isNext && <Badge variant="NOT_EXECUTED">PROCHAINE</Badge>}
-                      </div>
-                      <p className="text-muted-foreground text-sm">
-                        Déclenchement: {triggerText}
-                      </p>
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        // start the action
-                        handleClickStartAction(action);
-                      }}
-                    >
-                      Trigger
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
+                  {isRunning ? "En cours" : isExpired ? "Expiré" : "En attente"}
+                </Badge>
+              </p>
+              <p>
+                <span className="text-muted-foreground">Temps restant:</span>{" "}
+                <span className="font-mono font-bold">
+                  {timeLeft.minutes}m {timeLeft.seconds}s
+                </span>
+              </p>
+            </div>
           </div>
-        </div>
-
-        {/* Action courante */}
-        {displayedAction && (
-          <>
-            <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
+          {displayedAction && (
+            <div className="rounded-lg border border-green-200 bg-green-50 p-4 transition-all dark:border-green-800 dark:bg-green-950">
               <h4 className="mb-2 font-semibold text-green-900 dark:text-green-100">
-                ⚡ Action en cours {manualCurrentAction && "(Manuel)"}
+                ⚡ Action en cours {manualCurrentAction && "(Manual Demo)"}
               </h4>
+
               <p className="text-sm text-green-800 dark:text-green-200">
                 <strong>{displayedAction.title}</strong> ({displayedAction.type})
               </p>
@@ -271,14 +150,26 @@ export function TimerWithActionsDemo() {
                 </p>
               )}
             </div>
-            <ActionDisplay
-              currentAction={displayedAction}
-              actions={testActions}
-              timeLeft={timeLeft}
-              timerId="test-timer"
-              onActionComplete={handleActionComplete}
-            />
-          </>
+          )}
+        </div>
+
+        {/* Liste des actions */}
+        <ActionList
+          actions={testActions}
+          isDemo={true}
+          currentAction={currentAction}
+          onActionStart={handleClickStartAction}
+        />
+
+        {/* Action courante */}
+        {displayedAction && (
+          <ActionDisplay
+            currentAction={displayedAction}
+            actions={testActions}
+            timeLeft={timeLeft}
+            timerId="test-timer"
+            onActionComplete={handleActionComplete}
+          />
         )}
       </CardContent>
     </Card>

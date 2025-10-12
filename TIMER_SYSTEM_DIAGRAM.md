@@ -260,16 +260,13 @@ App
 
 ## Cas d'usage avancés
 
-### Scénario 1: Actions séquentielles rapides
+### Scénario 1: Actions à la fin`
 
 ```
-Timer: 5 minutes
-Actions toutes les 30 secondes
+Timer: 30 minutes
+Actions a la fin du timer
 
-14:00:00 → Image 1 (offset: 0)
-14:00:30 → Son 1 (offset: 0.5)
-14:01:00 → Image 2 (offset: 1)
-14:01:30 → Son 2 (offset: 1.5)
+14:30:00 → Video 1 (offset: 0)
 ...
 ```
 

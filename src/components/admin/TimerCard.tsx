@@ -30,7 +30,7 @@ export default function TimerCard({ timerData, isDemo }: TimerCardProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { timeLeft, isExpired } = useTimerWithActions({
+  const { timeLeft, isExpired, currentAction } = useTimerWithActions({
     startTime: timerData.scheduledStartTime,
     durationMinutes: timerData.durationMinutes ?? 0,
     actions: timerData.actions,
@@ -53,8 +53,10 @@ export default function TimerCard({ timerData, isDemo }: TimerCardProps) {
   const timerIsStarted = isExpired && timerData.status === "RUNNING";
   const timerIsCompleted = isExpired && timerData.status === "COMPLETED";
 
-  // Derived state - no need for useState
-  const pulseClassName = timerNeedsToStart ? "animate-pulse bg-[#A5D6A7]" : "";
+  // Timer actions pulse effect when it needs to start
+  // to draw attention to the admin
+  // when the timer is pending and the scheduled start time has passed
+  const pulseClassName = timerNeedsToStart ? " animate-pulse bg-[#A5D6A7]" : "";
 
   const { mutate, isPending } = useMutation({
     mutationKey: ["updateTimer", timerData.id],
@@ -81,7 +83,7 @@ export default function TimerCard({ timerData, isDemo }: TimerCardProps) {
     },
   });
 
-  const handleStartTimer = () => {
+  const handleStartTimerAction = () => {
     mutate();
   };
 
@@ -126,41 +128,6 @@ export default function TimerCard({ timerData, isDemo }: TimerCardProps) {
         {!isManualTimer && !isPunctualTimer && <StatusBadge status={status} />}
       </div>
     );
-  };
-
-  const renderTriggerActionButton = () => {
-    if (timerIsPending && isDemo) {
-      return (
-        <div className="text-muted-foreground mt-4 flex flex-col items-center text-sm">
-          <Button
-            className={cn("mt-1", isPending && "cursor-not-allowed opacity-50")}
-            onClick={() => {
-              handleStartTimer();
-            }}
-          >
-            {isPending ? "Starting actions" : "Start timer actions"}
-          </Button>
-        </div>
-      );
-    }
-    if (!isDemo && (timerIsPending || timerNeedsToStart)) {
-      return (
-        <div className="text-muted-foreground mt-4 flex flex-col items-center text-sm">
-          <Button
-            className={cn(
-              "mt-1",
-              (isPending || !isExpired) && "cursor-not-allowed opacity-50",
-            )}
-            onClick={() => {
-              handleStartTimer();
-            }}
-          >
-            {isPending ? "Starting actions" : "Start timer actions"}
-          </Button>
-        </div>
-      );
-    }
-    return null;
   };
 
   return (
@@ -219,10 +186,15 @@ export default function TimerCard({ timerData, isDemo }: TimerCardProps) {
         {/* Status Badge */}
         {renderStatusBadge(timerData.status)}
 
-        {renderTriggerActionButton()}
+        {/* {renderTriggerActionButton()} */}
 
         {/* Actions */}
-        <ActionList actions={timerData.actions} />
+        <ActionList
+          actions={timerData.actions}
+          isDemo={isDemo}
+          currentAction={currentAction}
+          onActionStart={handleStartTimerAction}
+        />
       </CardContent>
       <CardFooter className="flex-1 items-end">
         <Button

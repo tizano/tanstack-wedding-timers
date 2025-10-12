@@ -8,22 +8,22 @@ Le système d'affichage des actions gère un flow complet depuis le déclencheme
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                   DÉCLENCHEMENT D'UNE ACTION                    │
+│                   DÉCLENCHEMENT D'UNE ACTION
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ ÉTAPE 1: Affichage du Média avec Overlay                       │
-│                                                                  │
+│ ÉTAPE 1: Affichage du Média avec Overlay
+│
 │ ┌────────────────────────────────────────────────────────────┐ │
-│ │  Overlay (fond noir semi-transparent)                      │ │
+│ │  Overlay (fond noir semi-transparent)                    │
 │ │                                                             │ │
 │ │  ┌──────────────────────────────────────────────────────┐ │ │
 │ │  │  Titre (si présent)                                   │ │ │
 │ │  └──────────────────────────────────────────────────────┘ │ │
 │ │                                                             │ │
 │ │  ┌──────────────────────────────────────────────────────┐ │ │
-│ │  │  Média (VIDEO, IMAGE, SOUND, GALLERY)                │ │ │
+│ │  │  Média (VIDEO, IMAGE, SOUND, GALLERY, IMAGE_SOUND)                │ │ │
 │ │  └──────────────────────────────────────────────────────┘ │ │
 │ │                                                             │ │
 │ │  Si triggerOffsetMinutes < 0 (action avant la fin):       │ │
@@ -35,7 +35,8 @@ Le système d'affichage des actions gère un flow complet depuis le déclencheme
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
-                    Média terminé (onComplete)
+                    Média terminé (onMediaComplete)
+                    Overlay se ferme
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
@@ -43,23 +44,20 @@ Le système d'affichage des actions gère un flow complet depuis le déclencheme
 │                                                                  │
 │ Si contentFr || contentEn || contentBr:                         │
 │                                                                  │
-│ ┌────────────────────────────────────────────────────────────┐ │
-│ │  Overlay (reste ouvert)                                     │ │
-│ │                                                             │ │
-│ │  ┌──────────────────────────────────────────────────────┐ │ │
-│ │  │  📝 Content FR (texte principal)                      │ │ │
-│ │  └──────────────────────────────────────────────────────┘ │ │
-│ │  ┌──────────────────────────────────────────────────────┐ │ │
-│ │  │  📝 Content EN (texte italique)                       │ │ │
-│ │  └──────────────────────────────────────────────────────┘ │ │
-│ │  ┌──────────────────────────────────────────────────────┐ │ │
-│ │  │  📝 Content BR (texte italique)                       │ │ │
-│ │  └──────────────────────────────────────────────────────┘ │ │
-│ │                                                             │ │
-│ │  Fermeture dans: 8s                                         │ │
+│   ┌──────────────────────────────────────────────────────┐ │ │
+│   │  📝 Content FR (texte FR)                      │ │ │
+│   └──────────────────────────────────────────────────────┘ │ │
+│   ┌──────────────────────────────────────────────────────┐ │ │
+│   │  📝 Content EN (texte EN)                       │ │ │
+│   └──────────────────────────────────────────────────────┘ │ │
+│   ┌──────────────────────────────────────────────────────┐ │ │
+│   │  📝 Content BR (texte BR)                       │ │ │
+│   └──────────────────────────────────────────────────────┘ │ │
+│                                                              │ │
+│ │  Affiche le contenu textual pendant displayDurationSec secondes                      │ │
 │ └────────────────────────────────────────────────────────────┘ │
 │                                                                  │
-│ Durée: displayDurationSec secondes                              │
+│                               │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -90,38 +88,6 @@ Le système d'affichage des actions gère un flow complet depuis le déclencheme
 
 ## Cas Spéciaux
 
-### Cas 1: Action avec triggerOffsetMinutes positif
-
-```
-Timer démarre à 14:00, durée 60 minutes
-Action: VIDEO à triggerOffsetMinutes: 5 (5 min après le début)
-
-Timeline:
-14:00 ─────5min────→ 14:05 ─────55min────→ 15:00
-                       ▲
-                    Trigger
-                       │
-                       ▼
-    ┌──────────────────────────────────┐
-    │ Overlay s'ouvre                  │
-    │ Titre: "Vidéo du couple"         │
-    │ Média: Lecture de la vidéo       │
-    │                                  │
-    │ (Pas de mini timer, offset > 0)  │
-    └──────────────────────────────────┘
-                       │
-                    Vidéo finie
-                       │
-                       ▼
-    ┌──────────────────────────────────┐
-    │ Affichage texte multilingue      │
-    │ Pendant displayDurationSec       │
-    └──────────────────────────────────┘
-                       │
-                       ▼
-                Overlay se ferme
-```
-
 ### Cas 2: Action avec triggerOffsetMinutes négatif
 
 ```
@@ -131,7 +97,7 @@ Action: SOUND à triggerOffsetMinutes: -10 (10 min avant la fin)
 Timeline:
 14:00 ────50min───→ 14:50 ────10min────→ 15:00
                       ▲
-                   Trigger
+                   Trigger : ETAPE 1
                       │
                       ▼
     ┌──────────────────────────────────┐
@@ -144,35 +110,20 @@ Timeline:
     │ (continue le countdown)          │
     └──────────────────────────────────┘
                       │
-                   Son fini
+                   Son fini, overlay se ferme
+                   ETAPE 2
                       │
                       ▼
     ┌──────────────────────────────────┐
     │ Affichage texte multilingue      │
-    │ Pendant displayDurationSec       │
+    │ Si trriggerOffsetMinutes, affiche jusqu'a la fin du timer       │
     └──────────────────────────────────┘
                       │
                       ▼
-                Overlay se ferme
-```
-
-### Cas 3: Action SOUND avec IMAGE précédente
-
-```
-Actions:
-1. IMAGE (orderIndex: 0)
-2. SOUND (orderIndex: 1)
-
-Quand SOUND se déclenche:
-    │
-    ▼
-Détection: IMAGE existe avant SOUND?
-    │
-    ├─ OUI → Affiche ImageWithSound
-    │         (Image de l'action 1 + Son de l'action 2)
-    │
-    └─ NON → Affiche SoundAction simple
-              (Juste le son)
+          ÉTAPE 3: Complétion de l'Action
+                      │
+                      ▼
+            On refait les memes actions
 ```
 
 ## États du Composant ActionDisplay
@@ -274,26 +225,17 @@ Tous les composants média (VideoAction, ImageAction, SoundAction, etc.) suivent
 
 ```typescript
 interface MediaActionProps {
-  url?: string;
-  urls?: string[]; // Pour GALLERY
-  title?: string;
-  displayDurationSec?: number;
-  onComplete: () => void; // IMPORTANT: appelé quand terminé
+  action: TimerAction;
+  onMediaComplete: () => void; // IMPORTANT: appelé quand terminé
 }
 ```
 
 ## Gestion du displayDurationSec
 
 ```
-displayDurationSec a deux utilisations:
+displayDurationSec a une seule utilisation:
 
-1. Dans les composants média:
-   - IMAGE: affiche l'image pendant displayDurationSec
-   - GALLERY: temps par image dans le carrousel
-   - AUDIO: (optionnel) arrêter après displayDurationSec
-   - VIDEO: (ignoré, la vidéo a sa propre durée)
-
-2. Pour le contenu textuel:
+1. Pour le contenu textuel:
    - Après le média, affiche le texte pendant displayDurationSec
    - Compte à rebours visible pour l'utilisateur
 ```
@@ -314,7 +256,7 @@ displayDurationSec a deux utilisations:
   contentEn: "Thank you for joining our wedding!",
   contentBr: "Obrigado por participar do nosso casamento!",
   displayDurationSec: 10,
-  orderIndex: 3,
+  orderIndex: 0,
   executedAt: null
 }
 
@@ -325,15 +267,14 @@ displayDurationSec a deux utilisations:
    - Vidéo: couple.mp4 (lecture)
    - Mini timer: "15m 00s" (countdown visible)
 3. Vidéo se termine (ex: après 2 minutes)
-4. Affichage textes:
+   - Overlay se ferme (fade out)
+4. Affichage textes pendant displayDurationSec:
    - "Merci d'être présents à notre mariage!"
    - "Thank you for joining our wedding!"
    - "Obrigado por participar do nosso casamento!"
-   - Countdown: "10s... 9s... 8s..."
-5. Après 10 secondes:
+5. A la fin de displayDurationSec:
    - completeAction("action-123")
    - getNextActionFromCurrent("timer-456", "action-123")
-   - Overlay se ferme (fade out)
 6. Si prochaine action:
    - Nouveau cycle commence
 7. Sinon:
@@ -389,6 +330,4 @@ const interval = setInterval(() => {
 5. ✅ Timer pour displayDurationSec
 6. ✅ Complétion et recherche suivante
 7. 🔄 Gestion des actions manuelles (isManual)
-8. 🔄 Animations plus sophistiquées
-9. 🔄 Support multi-timers avec transition automatique
-10. 🔄 Mode preview/démo pour tester les actions
+8. 🔄 Mode preview/démo pour tester les actions

@@ -198,28 +198,16 @@ export function useTimerWithActions({
     // Gérer les actions
     if (actions && actions.length > 0) {
       // Trier les actions par ordre de déclenchement
-      const sortedActions = [...actions]
-        .filter((action) => action.status !== "COMPLETED")
-        .sort((a, b) => {
-          const timeA = calculateActionTriggerTime(
-            start,
-            durationMinutes,
-            a.triggerOffsetMinutes,
-          );
-          const timeB = calculateActionTriggerTime(
-            start,
-            durationMinutes,
-            b.triggerOffsetMinutes,
-          );
-          return timeA.getTime() - timeB.getTime();
-        });
+      const orderedActions = [...actions].filter(
+        (action) => action.status !== "COMPLETED",
+      );
 
       // Trouver l'action courante (celle dont le temps de déclenchement est passé mais pas encore exécutée)
       let foundCurrentAction: TimerAction | null = null;
       let foundNextAction: TimerAction | null = null;
       let timeToNext = 0;
 
-      for (const action of sortedActions) {
+      for (const action of orderedActions) {
         const actionTriggerTime = calculateActionTriggerTime(
           start,
           durationMinutes,

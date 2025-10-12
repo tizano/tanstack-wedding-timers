@@ -1,6 +1,7 @@
 import { TimerWithActions } from "@/lib/types/timer.type";
 import { formatTimezoneAgnosticDate } from "@/lib/utils";
 import { useLocation, useNavigate } from "@tanstack/react-router";
+import { PartyPopper } from "lucide-react";
 import { useState } from "react";
 import { TimerWithActionsDemo } from "../demo/TimerWithActionsDemo";
 import { Button } from "../ui/button";
@@ -34,10 +35,11 @@ function WeddingTimerSection({
               Click me to enable video sound
             </Button>
           )}
-          <h1 className="relative mb-4 text-center text-6xl font-bold text-gray-50">
-            Tony & Neka
-          </h1>
-          {currentTimer ? (
+          <div className="flex flex-col items-center gap-2 text-gray-200 dark:text-gray-200">
+            <PartyPopper className="size-9" />
+            <h1 className="text-4xl font-bold">Tony & Neka</h1>
+          </div>
+          {currentTimer && isDemo ? (
             <div className="space-y-2 text-center text-gray-200">
               <h2 className="text-2xl font-semibold">{currentTimer.name}</h2>
               {currentTimer.scheduledStartTime && (

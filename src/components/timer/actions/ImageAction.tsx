@@ -20,10 +20,8 @@ const ImageAction = ({ action, onMediaComplete }: ImageActionProps) => {
     }, IMAGE_DISPLAY_DURATION_SEC * 1000);
 
     return () => {
-      onMediaComplete?.();
       clearTimeout(timer);
     };
-    // Pas de durée définie, terminer immédiatement
   }, [onMediaComplete]);
 
   return (
@@ -31,7 +29,7 @@ const ImageAction = ({ action, onMediaComplete }: ImageActionProps) => {
       <img
         src={url || ""}
         alt={action.title || "Image"}
-        className="max-h-[60vh] max-w-full rounded-lg shadow-2xl"
+        className="max-h-[60vh] max-w-full"
       />
     </div>
   );

@@ -182,21 +182,21 @@ const ActionDisplay = ({
 
     return (
       <>
-        <div className="absolute top-16 left-16 w-full max-w-1/4">
+        <div className="absolute top-16 left-16 w-full max-w-1/3 xl:max-w-1/4">
           <ContentAction
             content={currentAction.contentEn || ""}
             lang="en"
             flagPosition="left"
           />
         </div>
-        <div className="absolute top-16 right-16 w-full max-w-1/4">
+        <div className="absolute top-16 right-16 w-full max-w-1/3 xl:max-w-1/4">
           <ContentAction
             content={currentAction.contentBr || ""}
             lang="br"
             flagPosition="right"
           />
         </div>
-        <div className="absolute bottom-16 left-16 w-full max-w-1/4">
+        <div className="absolute bottom-16 left-16 w-full max-w-1/3 xl:max-w-1/4">
           <ContentAction
             content={currentAction.contentFr || ""}
             lang="fr"
@@ -216,12 +216,7 @@ const ActionDisplay = ({
           !showMediaContent && "pointer-events-none -z-50 opacity-0 transition-all",
         )}
       >
-        <div
-          className={cn(
-            "flex w-full max-w-4xl flex-col items-center gap-6 p-8",
-            currentAction.type === "VIDEO" && "max-w-screen",
-          )}
-        >
+        <div className={cn(currentAction.type === "VIDEO" && "max-w-screen")}>
           {/* Mini timer si offset négatif (action avant la fin) */}
           {shouldShowMiniTimer && showMediaContent && (
             <div className="mt-6 rounded-lg bg-black/50 p-4 text-gray-100 backdrop-blur-md">
@@ -229,7 +224,7 @@ const ActionDisplay = ({
             </div>
           )}
           {/* Contenu média (vidéo/image/son/galerie) */}
-          {renderMediaContent()}
+          <div className="absolute">{renderMediaContent()}</div>
 
           {/* Contenu textuel multilingue après le média */}
         </div>
