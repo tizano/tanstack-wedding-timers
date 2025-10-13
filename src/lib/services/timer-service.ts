@@ -129,30 +129,50 @@ export class TimerService {
     logger(`Total timers to schedule: ${allTimers.length}`);
 
     // 3. Calculer les scheduledStartTime pour chaque timer
-    // Le premier timer commence maintenant
-    let currentScheduledTime = convertToTimezoneAgnosticDate(now);
+    // Le premier timer commence maintenant + 5 minutes
+    let currentScheduledTime: Date | null = convertToTimezoneAgnosticDate(now);
+    if (currentScheduledTime) {
+      currentScheduledTime = new Date(currentScheduledTime.getTime() + 5 * 60000);
+    }
     console.log("Initial now to updatedAt:", currentScheduledTime);
 
     for (let i = 0; i < allTimers.length; i++) {
       const currentTimer = allTimers[i];
+      let newScheduledTime: Date | null = null;
 
-      // Calculer le scheduledStartTime du prochain timer
-      if (i < allTimers.length - 1) {
-        // Si le timer actuel a une durée, ajouter cette durée
-        if (currentTimer.durationMinutes && currentTimer.durationMinutes > 0) {
+      // Déterminer le type de timer
+      const isManual = currentTimer.isManual === true;
+      const hasNoDuration =
+        !currentTimer.durationMinutes || currentTimer.durationMinutes === 0;
+      const hasDuration =
+        currentTimer.durationMinutes && currentTimer.durationMinutes > 0;
+
+      if (isManual) {
+        // Timer manuel : pas de scheduledStartTime (null) comme dans wedding-event-1
+        newScheduledTime = null;
+        // Le currentScheduledTime ne change pas pour les timers suivants
+      } else if (hasNoDuration) {
+        // Timer ponctuel : utiliser le now actuel (moment où le bouton est cliqué)
+        // mais conserver la structure (avoir un scheduledStartTime) comme dans wedding-event-1
+        newScheduledTime = currentScheduledTime;
+        // Le currentScheduledTime ne change pas pour les timers suivants
+      } else if (hasDuration) {
+        // Timer avec durée : utiliser le currentScheduledTime calculé
+        newScheduledTime = currentScheduledTime;
+
+        // Calculer le scheduledStartTime du prochain timer en ajoutant la durée
+        if (currentScheduledTime && currentTimer.durationMinutes) {
           currentScheduledTime = new Date(
             currentScheduledTime.getTime() + currentTimer.durationMinutes * 60000,
           );
         }
-        // Si le timer actuel est ponctuel/manuel, on ne change pas currentScheduledTime
-        // Le prochain timer aura la même heure programmée (sera géré manuellement ou par cron)
       }
 
       // Mettre à jour le scheduledStartTime du timer actuel
       await db
         .update(timer)
         .set({
-          scheduledStartTime: currentScheduledTime,
+          scheduledStartTime: newScheduledTime,
           updatedAt: now,
         })
         .where(eq(timer.id, currentTimer.id));
@@ -166,7 +186,7 @@ export class TimerService {
       throw new Error("Aucun timer avec durée trouvé pour démarrer le mariage");
     }
 
-    // Stop all timers that might be running (safety)
+    // 5. Stop all timers that might be running (safety)
     await db
       .update(timer)
       .set({
@@ -175,10 +195,10 @@ export class TimerService {
       })
       .where(eq(timer.weddingEventId, weddingEventId));
 
-    // 5. Démarrer le premier timer avec durée
+    // 6. Démarrer le premier timer avec durée
     await this.startTimer(firstTimer.id);
 
-    // 6. Notifier via Pusher que le mariage demo a démarré
+    // 7. Notifier via Pusher que le mariage demo a démarré
     await pusher.trigger(CHANNEL, TIMER_UPDATED, {
       weddingEventId,
       timerId: firstTimer.id,
@@ -419,15 +439,6 @@ export class TimerService {
     if (sourceTimers.length === 0 || targetTimers.length === 0) {
       throw new Error("Aucun timer trouvé pour l'événement source ou cible");
     }
-    // await db
-    //   .update(timer)
-    //   .set({
-    //     status: "PENDING",
-    //     startedAt: null,
-    //     completedAt: null,
-    //     updatedAt: now,
-    //   })
-    //   .where(eq(timer.weddingEventId, weddingEventId));
 
     // Reset tous les timers de la cible avec les valeurs sources
     // targetTimers doit se mettre a jour avec les valeurs de sourceTimers
