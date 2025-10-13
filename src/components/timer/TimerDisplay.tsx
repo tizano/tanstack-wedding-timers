@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 import { Badge } from "../ui/badge";
 import ActionDisplay from "./ActionDisplay";
+import ContentAction from "./actions/ContentAction";
 import TimerCountdown from "./TimerCountdown";
 
 interface TimerDisplayProps {
@@ -48,6 +49,18 @@ const TimerDisplay = ({
     console.log("[TimerDisplay] Action ponctuelle détectée:", action);
     return action;
   }, [updatedAction]);
+
+  // Récupérer la première action du timer pour afficher ses contenus multilingues
+  const firstAction = useMemo(() => {
+    if (!timerData.actions || timerData.actions.length === 0) return null;
+    return timerData.actions[0];
+  }, [timerData.actions]);
+
+  // Afficher les contenus si la première action en a et que le timer est en cours
+  const shouldShowContent =
+    isRunning &&
+    firstAction &&
+    (firstAction.contentFr || firstAction.contentEn || firstAction.contentBr);
 
   return (
     <div className="space-y-6">
@@ -126,6 +139,39 @@ const TimerDisplay = ({
           </>
         )}
       </div>
+
+      {/* Afficher les contenus multilingues de la première action pendant tout le décompte */}
+      {shouldShowContent && (
+        <>
+          {firstAction.contentEn && (
+            <div className="absolute top-16 left-16 w-full max-w-1/3 xl:max-w-1/4">
+              <ContentAction
+                content={firstAction.contentEn}
+                lang="en"
+                flagPosition="left"
+              />
+            </div>
+          )}
+          {firstAction.contentBr && (
+            <div className="absolute top-16 right-16 w-full max-w-1/3 xl:max-w-1/4">
+              <ContentAction
+                content={firstAction.contentBr}
+                lang="br"
+                flagPosition="right"
+              />
+            </div>
+          )}
+          {firstAction.contentFr && (
+            <div className="absolute bottom-16 left-16 w-full max-w-1/3 xl:max-w-1/4">
+              <ContentAction
+                content={firstAction.contentFr}
+                lang="fr"
+                flagPosition="left"
+              />
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };

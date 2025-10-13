@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ImageAction, ImageWithSound, SoundAction, VideoAction } from "./actions";
-import ContentAction from "./actions/ContentAction";
 import TimerCountdown from "./TimerCountdown";
 
 interface ActionDisplayProps {
@@ -35,9 +34,6 @@ const ActionDisplay = ({
   markActionAsCompleting,
 }: ActionDisplayProps) => {
   const [showMediaContent, setShowMediaContent] = useState(true);
-  const [showTextContent, setShowTextContent] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [textContentTimer, setTextContentTimer] = useState<number | null>(null);
   const [completingActionId, setCompletingActionId] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
@@ -181,47 +177,18 @@ const ActionDisplay = ({
   // Déterminer si on doit afficher le timer en petit (offset négatif)
   const shouldShowMiniTimer = currentAction.triggerOffsetMinutes < 0;
 
-  // Vérifier s'il y a du contenu textuel multilingue
-  const hasTextContent = !!(
-    currentAction.contentFr ||
-    currentAction.contentEn ||
-    currentAction.contentBr
-  );
-
   /**
    * Appelé quand le média est terminé (vidéo/audio/image finie)
    */
   const handleMediaComplete = async () => {
     console.log(`[ActionDisplay] Media completed for action ${currentAction.id}`);
     setShowMediaContent(false);
-
-    if (hasTextContent && currentAction.displayDurationSec) {
-      setShowTextContent(hasTextContent);
-      // Démarrer le timer pour le contenu textuel
-      let remaining = currentAction.displayDurationSec;
-      setTextContentTimer(remaining);
-
-      const interval = setInterval(() => {
-        remaining -= 1;
-        setTextContentTimer(remaining);
-
-        if (remaining <= 0) {
-          clearInterval(interval);
-          setTextContentTimer(null);
-          // Fermer l'overlay et terminer l'action
-          handleActionComplete();
-        }
-      }, 1000);
-    } else {
-      // Pas de contenu textuel, terminer immédiatement
-      handleActionComplete();
-    }
+    // Terminer l'action immédiatement après la fin du média
+    handleActionComplete();
   };
 
   const resetValueState = () => {
     setShowMediaContent(true);
-    setShowTextContent(false);
-    setTextContentTimer(null);
   };
 
   /**
@@ -268,36 +235,6 @@ const ActionDisplay = ({
     }
   };
 
-  const renderTextContent = () => {
-    if (!showTextContent) return null;
-
-    return (
-      <>
-        <div className="absolute top-16 left-16 w-full max-w-1/3 xl:max-w-1/4">
-          <ContentAction
-            content={currentAction.contentEn || ""}
-            lang="en"
-            flagPosition="left"
-          />
-        </div>
-        <div className="absolute top-16 right-16 w-full max-w-1/3 xl:max-w-1/4">
-          <ContentAction
-            content={currentAction.contentBr || ""}
-            lang="br"
-            flagPosition="right"
-          />
-        </div>
-        <div className="absolute bottom-16 left-16 w-full max-w-1/3 xl:max-w-1/4">
-          <ContentAction
-            content={currentAction.contentFr || ""}
-            lang="fr"
-            flagPosition="left"
-          />
-        </div>
-      </>
-    );
-  };
-
   // Ne rien afficher si l'action est en cours de complétion
   if (isCompleting) {
     console.log("[ActionDisplay] Action en cours de complétion, masquage de l'affichage");
@@ -326,11 +263,8 @@ const ActionDisplay = ({
               {renderMediaContent()}
             </div>
           )}
-
-          {/* Contenu textuel multilingue après le média */}
         </div>
       </div>
-      {renderTextContent()}
     </>
   );
 };
