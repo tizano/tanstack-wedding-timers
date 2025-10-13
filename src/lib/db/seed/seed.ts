@@ -179,7 +179,7 @@ async function seedWeddingData() {
   const timerData: NewTimer[] = [
     {
       id: "timer-1",
-      orderIndex: 1,
+      orderIndex: 2,
       name: "Video + Sound - Landing of the bride and groom",
       scheduledStartTime: new Date("2025-10-25T16:00:00.000Z"), // 16h à Recife (UTC-3)
       durationMinutes: 30,
@@ -192,7 +192,7 @@ async function seedWeddingData() {
     },
     {
       id: "timer-2",
-      orderIndex: 2,
+      orderIndex: 1,
       name: "Sound - Landing of the bride and groom",
       scheduledStartTime: new Date("2025-10-25T16:20:00.000Z"),
       status: "PENDING" as const,
@@ -382,7 +382,7 @@ async function seedWeddingData() {
   const timerDemoData: NewTimer[] = [
     {
       id: "timer-demo-1",
-      orderIndex: 1,
+      orderIndex: 2,
       name: "Video + Sound - Landing of the bride and groom",
       scheduledStartTime: new Date("2025-10-25T16:00:00.000Z"), // 16h à Recife (UTC-3)
       durationMinutes: 10,
@@ -395,7 +395,7 @@ async function seedWeddingData() {
     },
     {
       id: "timer-demo-2",
-      orderIndex: 2,
+      orderIndex: 1,
       name: "Sound - Landing of the bride and groom",
       scheduledStartTime: new Date("2025-10-25T16:20:00.000Z"),
       status: "PENDING" as const,
