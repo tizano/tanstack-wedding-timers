@@ -1,5 +1,9 @@
+import { resetAllTimersActions } from "@/lib/actions/timer-actions.action";
 import { getAllTimers } from "@/lib/actions/timer.action";
+import { QUERY_KEYS } from "@/lib/constant/constant";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import EnableDemoButton from "../demo/EnableDemoButton";
 import { Button } from "../ui/button";
 import TimerCard from "./TimerCard";
@@ -10,6 +14,8 @@ type TimerListProps = {
 };
 export default function TimerList({ timersWithActions, isDemo }: TimerListProps) {
   const navigate = useNavigate();
+  const resetTimers = useServerFn(resetAllTimersActions);
+  const queryClient = useQueryClient();
 
   if (timersWithActions.length === 0) {
     return <div>No timers found.</div>;
@@ -34,17 +40,29 @@ export default function TimerList({ timersWithActions, isDemo }: TimerListProps)
             on the main app
           </span>
         </p>
-        <Button
-          onClick={() =>
-            navigate({
-              to: "/dashboard/$weddingEventId",
-              params: { weddingEventId: "wedding-event-1" },
-            })
-          }
-          className="cursor-pointer"
-        >
-          Disable Demo Mode
-        </Button>
+
+        <div className="flex gap-2">
+          <Button
+            onClick={() => {
+              resetTimers();
+              queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ALL_TIMERS] });
+            }}
+            className="cursor-pointer"
+          >
+            Reset timers actions
+          </Button>
+          <Button
+            onClick={() =>
+              navigate({
+                to: "/dashboard/$weddingEventId",
+                params: { weddingEventId: "wedding-event-1" },
+              })
+            }
+            className="cursor-pointer"
+          >
+            Disable Demo Mode
+          </Button>
+        </div>
       </div>
     );
   };

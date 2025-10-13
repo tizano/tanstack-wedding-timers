@@ -1,11 +1,12 @@
 import TimerList from "@/components/admin/TimerList";
 import { getAllTimers } from "@/lib/actions/timer.action";
+import { QUERY_KEYS } from "@/lib/constant/constant";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
 const timersQueryOptions = (weddingEventId: string) =>
   queryOptions({
-    queryKey: ["timers", weddingEventId],
+    queryKey: [QUERY_KEYS.ALL_TIMERS, weddingEventId],
     queryFn: async () => await getAllTimers({ data: { weddingEventId } }),
   });
 

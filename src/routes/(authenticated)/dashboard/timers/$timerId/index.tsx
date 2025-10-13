@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getTimerById, updateTimer } from "@/lib/actions/timer.action";
+import { MUTATION_KEYS, QUERY_KEYS } from "@/lib/constant/constant";
 import { UpdateTimer } from "@/lib/db/schema/timer.schema";
 import { convertToTimezoneAgnosticDate } from "@/lib/utils";
 import { DevTool } from "@hookform/devtools";
@@ -21,7 +22,7 @@ const updateTimerSchema = z.object({
 
 const timerQueryOptions = (timerId: string) =>
   queryOptions({
-    queryKey: ["timer", timerId],
+    queryKey: [QUERY_KEYS.TIMER, timerId],
     queryFn: async () => (await getTimerById({ data: { id: timerId } })) || null,
   });
 
@@ -44,6 +45,7 @@ function RouteComponent() {
   const canGoBack = useCanGoBack();
 
   const { mutate: timerMutation, isPending } = useMutation({
+    mutationKey: [MUTATION_KEYS.UPDATE_TIMER],
     mutationFn: async (
       data: UpdateTimer & {
         cascadeUpdate?: boolean;
@@ -67,8 +69,8 @@ function RouteComponent() {
         navigate({ to: "/dashboard" });
       }
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ["timers"] });
-      queryClient.invalidateQueries({ queryKey: ["timer", timerId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ALL_TIMERS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TIMER, timerId] });
     },
     onError: (error) => {
       console.error("Failed to update timer:", error);

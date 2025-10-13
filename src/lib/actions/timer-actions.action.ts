@@ -6,15 +6,11 @@ import { authMiddleware } from "../auth/middleware";
 // Schémas de validation
 const getNextActionSchema = z.object({
   timerId: z.string(),
-  actionId: z.string().optional(),
+  actionId: z.string(),
 });
 const startActionSchema = z.object({ actionId: z.string() });
 const completeActionSchema = z.object({ actionId: z.string() });
 const resetTimerActionsSchema = z.object({ timerId: z.string() });
-const jumpToBeforeNextActionSchema = z.object({
-  timerId: z.string(),
-  secondsBefore: z.number().default(15),
-});
 
 // Query functions (GET)
 export const getNextActionFromCurrent = createServerFn({ method: "GET" })
@@ -44,11 +40,8 @@ export const resetTimerActions = createServerFn({ method: "POST" })
     return await timerActionService.resetTimerActions(data.timerId);
   });
 
-export const jumpToBeforeNextAction = createServerFn({ method: "POST" })
-  .inputValidator(jumpToBeforeNextActionSchema)
-  .handler(async ({ data }) => {
-    return await timerActionService.jumpToBeforeNextAction(
-      data.timerId,
-      data.secondsBefore,
-    );
+export const resetAllTimersActions = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .handler(async () => {
+    return await timerActionService.resetAllTimersActions();
   });

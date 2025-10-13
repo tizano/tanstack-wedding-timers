@@ -1,6 +1,9 @@
+import { completeAction, startAction } from "@/lib/actions/timer-actions.action";
+import { MUTATION_KEYS } from "@/lib/constant/constant";
 import { type TimerAction } from "@/lib/db/schema/timer.schema";
 import { TimeLeft } from "@/lib/hooks/useTimerWithActions";
 import { cn } from "@/lib/utils";
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { ImageAction, ImageWithSound, SoundAction, VideoAction } from "./actions";
 import ContentAction from "./actions/ContentAction";
@@ -8,35 +11,10 @@ import TimerCountdown from "./TimerCountdown";
 
 interface ActionDisplayProps {
   currentAction: TimerAction;
-  actions: TimerAction[];
   timeLeft: TimeLeft;
-  timerId: string;
+  nextAction?: TimerAction | null;
   onActionComplete?: () => void;
 }
-
-// Si on a du contenu textuel à afficher
-// if (hasTextContent && currentAction.displayDurationSec) {
-//   setShowTextContent(true);
-
-//   // Démarrer le timer pour le contenu textuel
-//   const remainingTime = currentAction.displayDurationSec;
-//   setTextContentTimer(remainingTime);
-
-//   // Compter à rebours
-//   const interval = setInterval(() => {
-//     setTextContentTimer((prev) => {
-//       if (prev === null || prev <= 1) {
-//         clearInterval(interval);
-//         handleActionComplete();
-//         return 0;
-//       }
-//       return prev - 1;
-//     });
-//   }, 1000);
-// } else {
-//   // Pas de contenu textuel, terminer l'action immédiatement
-//   handleActionComplete();
-// }
 
 /**
  * Composant principal qui dispatche l'affichage des actions aux composants enfants appropriés.
@@ -51,14 +29,57 @@ interface ActionDisplayProps {
  */
 const ActionDisplay = ({
   currentAction,
-  actions,
   timeLeft,
-  timerId,
+  nextAction,
   onActionComplete,
 }: ActionDisplayProps) => {
   const [showMediaContent, setShowMediaContent] = useState(true);
   const [showTextContent, setShowTextContent] = useState(false);
   const [textContentTimer, setTextContentTimer] = useState<number | null>(null);
+
+  const { mutate: mutateStartAction } = useMutation({
+    mutationKey: [MUTATION_KEYS.START_ACTION],
+    mutationFn: async (actionId: string) => {
+      return await startAction({
+        data: {
+          actionId,
+        },
+      });
+    },
+    onSuccess: () => {
+      console.log("Next action started automatically");
+    },
+    onError: (error) => {
+      console.error("Error starting next action:", error);
+    },
+  });
+
+  const { mutate: mutateCompleteAction } = useMutation({
+    mutationKey: ["completeAction"],
+    mutationFn: async () => {
+      // Simulate an API call to complete the action
+      return await completeAction({
+        data: {
+          actionId: currentAction.id,
+        },
+      });
+    },
+    onSuccess: () => {
+      console.log("[ActionDisplay][mutateCompleteAction] Action completed successfully");
+      // Vérifier si la prochaine action doit être déclenchée automatiquement
+      if (nextAction && nextAction.triggerOffsetMinutes === 0) {
+        console.log(
+          `[ActionDisplay] Déclenchement automatique de l'action suivante: ${nextAction.id}`,
+        );
+        console.log(nextAction);
+
+        mutateStartAction(nextAction.id);
+      }
+    },
+    onError: (error) => {
+      console.error("Error completing action:", error);
+    },
+  });
 
   // Déterminer si on doit afficher le timer en petit (offset négatif)
   const shouldShowMiniTimer = currentAction.triggerOffsetMinutes < 0;
@@ -74,7 +95,7 @@ const ActionDisplay = ({
    * Appelé quand le média est terminé (vidéo/audio/image finie)
    */
   const handleMediaComplete = async () => {
-    console.log(`Media completed for action ${currentAction.id}`);
+    console.log(`[ActionDisplay] Media completed for action ${currentAction.id}`);
     setShowMediaContent(false);
 
     if (hasTextContent && currentAction.displayDurationSec) {
@@ -108,31 +129,16 @@ const ActionDisplay = ({
 
   /**
    * Termine l'action et cherche la suivante
+   * Si la prochaine action a le même triggerOffsetMinutes, l'enchaîner automatiquement
    */
   const handleActionComplete = async () => {
-    console.log(`Action ${currentAction.id} completed, marking as complete...`);
-
-    // try {
-    // Marquer l'action comme complétée en DB
-    // await completeAction({ data: { actionId: currentAction.id } });
-
-    // // Chercher la prochaine action
-    // const nextActionResult = await getNextActionFromCurrent({
-    //   data: { timerId, actionId: currentAction.id },
-    // });
-
-    // console.log("Next action:", nextActionResult);
+    mutateCompleteAction();
     resetValueState();
     // Notifier le parent
     onActionComplete?.();
-
-    // Si pas de prochaine action, le timer est terminé
-    //   if (!nextActionResult?.action) {
-    //     console.log("No more actions, timer completed!");
-    //   }
-    // } catch (error) {
-    //   console.error("Error completing action:", error);
-    // }
+    console.log(
+      `[ActionDisplay][handleActionComplete] Action ${currentAction.id} completed, marking as complete...`,
+    );
   };
 
   const renderMediaContent = () => {
@@ -156,16 +162,6 @@ const ActionDisplay = ({
           <ImageAction action={currentAction} onMediaComplete={handleMediaComplete} />
         );
 
-      // case "GALLERY":
-      //   return (
-      //     <GalleryAction
-      //       urls={currentAction.urls}
-      //       title={currentAction.title || undefined}
-      //       displayDurationSec={currentAction.displayDurationSec || undefined}
-      //       onComplete={handleMediaComplete}
-      //     />
-      //   );
-
       default:
         return (
           <div className="text-white">
@@ -176,8 +172,6 @@ const ActionDisplay = ({
   };
 
   const renderTextContent = () => {
-    console.log("Render text content:", { showTextContent, textContentTimer });
-
     if (!showTextContent) return null;
 
     return (
@@ -224,7 +218,11 @@ const ActionDisplay = ({
             </div>
           )}
           {/* Contenu média (vidéo/image/son/galerie) */}
-          <div className="absolute">{renderMediaContent()}</div>
+          {showMediaContent && (
+            <div className="absolute inset-0 flex h-screen w-screen items-center justify-center">
+              {renderMediaContent()}
+            </div>
+          )}
 
           {/* Contenu textuel multilingue après le média */}
         </div>

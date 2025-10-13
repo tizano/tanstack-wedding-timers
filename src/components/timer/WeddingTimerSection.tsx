@@ -1,9 +1,7 @@
 import { TimerWithActions } from "@/lib/types/timer.type";
-import { formatTimezoneAgnosticDate } from "@/lib/utils";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { PartyPopper } from "lucide-react";
 import { useState } from "react";
-import { TimerWithActionsDemo } from "../demo/TimerWithActionsDemo";
 import { Button } from "../ui/button";
 import TimerDisplay from "./TimerDisplay";
 
@@ -39,7 +37,7 @@ function WeddingTimerSection({
             <PartyPopper className="size-9" />
             <h1 className="text-4xl font-bold">Tony & Neka</h1>
           </div>
-          {currentTimer && isDemo ? (
+          {/* {currentTimer && isDemo && (
             <div className="space-y-2 text-center text-gray-200">
               <h2 className="text-2xl font-semibold">{currentTimer.name}</h2>
               {currentTimer.scheduledStartTime && (
@@ -60,11 +58,8 @@ function WeddingTimerSection({
               <p className="text-sm opacity-60">
                 Statut: {currentTimer.status || "En attente"}
               </p>
-              <TimerDisplay timerData={currentTimer} hideTitle />
             </div>
-          ) : (
-            <div className="text-xl text-gray-300">Aucun timer programmé</div>
-          )}
+          )} */}
           <div className="group absolute top-0 right-0 p-4">
             <Button
               onClick={() =>
@@ -79,7 +74,12 @@ function WeddingTimerSection({
               Go to dashboard
             </Button>
           </div>
-          {isDemo && <TimerWithActionsDemo />}
+          {currentTimer && (
+            <div className="text-gray-100">
+              <TimerDisplay timerData={currentTimer} hideTitle variant="large" />
+            </div>
+          )}
+          {/* {isDemo && <TimerWithActionsDemo />} */}
         </div>
       </article>
     </section>

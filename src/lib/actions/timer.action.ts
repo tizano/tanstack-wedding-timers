@@ -12,7 +12,6 @@ const startWeddingDemoSchema = z.object({
   weddingEventId: z.string(),
   weddingEventIdToCopyFrom: z.string(),
 });
-const executeActionSchema = z.object({ actionId: z.string() });
 const completeTimerSchema = z.object({ timerId: z.string() });
 const resetWeddingSchema = z.object({
   weddingEventId: z.string(),
@@ -74,13 +73,6 @@ export const startTimer = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .handler(async ({ data }) => {
     return await timerService.startTimer(data.timerId, data.weddingEventId);
-  });
-
-export const executeAction = createServerFn({ method: "POST" })
-  .inputValidator(executeActionSchema)
-  .middleware([authMiddleware])
-  .handler(async ({ data }) => {
-    return await timerService.executeAction(data.actionId);
   });
 
 export const completeTimer = createServerFn({ method: "POST" })

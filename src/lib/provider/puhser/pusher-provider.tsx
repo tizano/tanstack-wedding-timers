@@ -1,17 +1,25 @@
 import { env } from "@/env/client";
 import { getCurrentTimer } from "@/lib/actions/timer.action";
+import { QUERY_KEYS } from "@/lib/constant/constant";
+import { TimerAction } from "@/lib/db/schema";
 import { ACTION_UPDATED, CHANNEL, TIMER_UPDATED, logger } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import Pusher from "pusher-js";
-import { createContext, use, useEffect, useMemo } from "react";
+import { createContext, use, useEffect, useMemo, useState } from "react";
 
 interface PusherContextType {
   pusher: Pusher | null;
   currentTimer: Awaited<ReturnType<typeof getCurrentTimer>> | null;
   isLoading: boolean;
   refetch: () => void;
+  updatedAction: {
+    actionId: string;
+    timerId: string;
+    nextAction: TimerAction | null;
+  } | null;
+  clearUpdatedAction: () => void;
 }
 
 export const PusherContext = createContext<PusherContextType>({
@@ -19,6 +27,8 @@ export const PusherContext = createContext<PusherContextType>({
   currentTimer: null,
   isLoading: false,
   refetch: () => {},
+  updatedAction: null,
+  clearUpdatedAction: () => {},
 });
 
 // Instance unique de Pusher partagée dans toute l'application
@@ -61,13 +71,20 @@ export function PusherProvider({ children }: PusherProviderProps) {
     ? "wedding-event-demo"
     : "wedding-event-1";
 
+  // State pour stocker l'action mise à jour via Pusher
+  const [updatedAction, setUpdatedAction] = useState<{
+    actionId: string;
+    timerId: string;
+    nextAction: TimerAction | null;
+  } | null>(null);
+
   const getCurrentTimerFn = useServerFn(getCurrentTimer);
   const {
     data: currentTimer,
     refetch: refetchCurrentTimer,
     isLoading,
   } = useQuery({
-    queryKey: ["currentTimer", weddingParams],
+    queryKey: [QUERY_KEYS.TIMER, weddingParams],
     queryFn: () =>
       getCurrentTimerFn({
         data: {
@@ -100,8 +117,15 @@ export function PusherProvider({ children }: PusherProviderProps) {
     };
 
     // Créer une fonction unique pour ce composant
-    const handleActionUpdate = (data: { id: string }) => {
+    const handleActionUpdate = (data: {
+      actionId: string;
+      timerId: string;
+      nextAction: TimerAction | null;
+    }) => {
       logger(`Action updated via Pusher: ${JSON.stringify(data)}`);
+
+      // Stocker l'action mise à jour dans le state
+      setUpdatedAction(data);
       console.log("Je passe par l action update");
 
       // Refetch timer data and invalidate router
@@ -125,14 +149,23 @@ export function PusherProvider({ children }: PusherProviderProps) {
     };
   }, [pusher, router, refetchCurrentTimer]);
 
+  // Fonction pour réinitialiser updatedAction après traitement
+  const clearUpdatedAction = () => {
+    console.log("🧹 Clearing updatedAction");
+    setUpdatedAction(null);
+  };
+
   const contextValue = useMemo(
     () => ({
       pusher,
       currentTimer: currentTimer || null,
       isLoading,
       refetch: refetchCurrentTimer,
+      updatedAction,
+      clearUpdatedAction,
+      nextAction: updatedAction?.nextAction || null,
     }),
-    [pusher, currentTimer, isLoading, refetchCurrentTimer],
+    [pusher, currentTimer, isLoading, refetchCurrentTimer, updatedAction],
   );
 
   return <PusherContext value={contextValue}>{children}</PusherContext>;

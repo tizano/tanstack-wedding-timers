@@ -1,21 +1,60 @@
+import { startAction } from "@/lib/actions/timer-actions.action";
+import { MUTATION_KEYS } from "@/lib/constant/constant";
 import type { TimerAction } from "@/lib/db/schema/timer.schema";
-import { cn } from "@/lib/utils";
+import { cn, logger } from "@/lib/utils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "sonner";
 import ActionItem from "./ActionItem";
 
 type ActionListProps = {
   actions: TimerAction[];
   currentAction: TimerAction | null;
   isDemo?: boolean;
-  onActionStart?: (action: TimerAction) => void;
+  display: "list" | "grid";
 };
 
 export default function ActionList({
   actions,
   isDemo,
-  onActionStart,
-  currentAction,
+  display = "list",
 }: ActionListProps) {
+  const [currentAction, setCurrentAction] = useState<TimerAction | null>(null);
+  const queryClient = useQueryClient();
+
+  const { mutate: mutateStartAction } = useMutation({
+    mutationKey: [MUTATION_KEYS.START_ACTION],
+    mutationFn: async () => {
+      logger("Starting action from TimerCard:");
+
+      console.log(currentAction?.id);
+      if (!currentAction?.id) {
+        throw new Error("No current action to start");
+      }
+
+      return await startAction({
+        data: {
+          actionId: currentAction.id,
+        },
+      });
+    },
+    onSuccess: () => {
+      // Optionally refetch or update the timer data after mutation
+      queryClient.invalidateQueries({ queryKey: ["timers"] });
+      toast.success("Timer action triggered successfully!");
+    },
+    onError: (error) => {
+      toast.error(`${error.message}`);
+    },
+  });
+
   if (!actions.length) return null;
+
+  const handleStartAction = (action: TimerAction) => {
+    console.log("iocicici");
+    setCurrentAction(action);
+    mutateStartAction();
+  };
 
   return (
     <div className="space-y-3">
@@ -23,7 +62,7 @@ export default function ActionList({
       <div
         className={cn(
           "space-y-2 text-left",
-          isDemo && "grid grid-cols-1 gap-2 space-y-0 xl:grid-cols-2",
+          display === "grid" && "grid grid-cols-1 gap-2 space-y-0 xl:grid-cols-2",
         )}
       >
         {actions.map((action) => (
@@ -31,7 +70,7 @@ export default function ActionList({
             key={action.id}
             action={action}
             isDemo={isDemo}
-            onActionStart={onActionStart}
+            onActionStart={(action) => handleStartAction(action)}
             currentAction={currentAction}
           />
         ))}

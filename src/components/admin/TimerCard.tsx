@@ -7,11 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { updateTimer } from "@/lib/actions/timer.action";
-import { useTimerWithActions } from "@/lib/hooks/useTimerWithActions";
+import { startTimer } from "@/lib/actions/timer.action";
+import { MUTATION_KEYS } from "@/lib/constant/constant";
+import { useTimerWithPusher } from "@/lib/hooks/useTimerWithPusher";
 import { TimerWithActions } from "@/lib/types/timer.type";
 import { cn, formatTimezoneAgnosticDate } from "@/lib/utils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Calendar, Clock } from "lucide-react";
 import { toast } from "sonner";
@@ -28,17 +29,39 @@ type TimerCardProps = {
 
 export default function TimerCard({ timerData, isDemo }: TimerCardProps) {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
-  const { timeLeft, isExpired, currentAction } = useTimerWithActions({
+  const { actions, ...restTimer } = timerData;
+
+  const { timeLeft, isExpired, currentAction } = useTimerWithPusher({
+    timer: restTimer,
     startTime: timerData.scheduledStartTime,
     durationMinutes: timerData.durationMinutes ?? 0,
-    actions: timerData.actions,
+    actions: actions,
     onExpire: () => {
       console.log("Timer expired for:", timerData.name);
     },
     onActionTrigger: (action) => {
       console.log("Action triggered:", action.title, action.type);
+    },
+  });
+
+  const { mutate: mutateDisplayTimer } = useMutation({
+    mutationKey: [MUTATION_KEYS.START_TIMER],
+    mutationFn: async () => {
+      // Simulate an API call to display the timer
+      return await startTimer({
+        data: {
+          timerId: timerData.id,
+          weddingEventId: timerData.weddingEventId,
+        },
+      });
+    },
+    onSuccess: () => {
+      console.log("Timer displayed successfully");
+      toast.success("Timer displayed successfully");
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 
@@ -57,35 +80,6 @@ export default function TimerCard({ timerData, isDemo }: TimerCardProps) {
   // to draw attention to the admin
   // when the timer is pending and the scheduled start time has passed
   const pulseClassName = timerNeedsToStart ? " animate-pulse bg-[#A5D6A7]" : "";
-
-  const { mutate, isPending } = useMutation({
-    mutationKey: ["updateTimer", timerData.id],
-    mutationFn: async () => {
-      /**
-       * TODO : Call an action to startActionTimer
-       * It should update the timer status to RUNNING and set the start time
-       * Also, it should execute the first action immediately
-       **/
-      return await updateTimer({
-        data: {
-          id: timerData.id,
-          status: "RUNNING",
-        },
-      });
-    },
-    onSuccess: () => {
-      // Optionally refetch or update the timer data after mutation
-      queryClient.invalidateQueries({ queryKey: ["timers"] });
-      toast.success("Timer action triggered successfully!");
-    },
-    onError: () => {
-      toast.error("Failed to trigger timer action.");
-    },
-  });
-
-  const handleStartTimerAction = () => {
-    mutate();
-  };
 
   const renderCountdown = () => {
     if (timerIsStarted) {
@@ -182,18 +176,23 @@ export default function TimerCard({ timerData, isDemo }: TimerCardProps) {
 
       <CardContent className="space-y-6">
         {/* Countdown Display */}
-        {renderCountdown()}
+        {!isPunctualTimer && !isManualTimer && renderCountdown()}
+
+        {timerData.durationMinutes !== null && timerData.durationMinutes > 0 && (
+          <div className="flex items-center justify-center">
+            <Button onClick={() => mutateDisplayTimer()}>Display this timer</Button>
+          </div>
+        )}
+
         {/* Status Badge */}
         {renderStatusBadge(timerData.status)}
-
-        {/* {renderTriggerActionButton()} */}
 
         {/* Actions */}
         <ActionList
           actions={timerData.actions}
           isDemo={isDemo}
           currentAction={currentAction}
-          onActionStart={handleStartTimerAction}
+          display="list"
         />
       </CardContent>
       <CardFooter className="flex-1 items-end">

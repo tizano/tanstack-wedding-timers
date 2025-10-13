@@ -1,4 +1,5 @@
 import { startWeddingDemo } from "@/lib/actions/timer.action";
+import { MUTATION_KEYS } from "@/lib/constant/constant";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "../ui/button";
@@ -6,7 +7,7 @@ import { Button } from "../ui/button";
 function EnableDemoButton() {
   const navigate = useNavigate();
   const { mutate, isPending, isSuccess } = useMutation({
-    mutationKey: ["start-wedding-demo"],
+    mutationKey: [MUTATION_KEYS.START_WEDDING_DEMO],
     mutationFn: async () => {
       return await startWeddingDemo({
         data: {

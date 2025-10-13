@@ -26,6 +26,13 @@ const ActionItem = ({
         return <Video className="text-primary h-5 w-5" />;
       case "SOUND":
         return <Volume2 className="text-primary h-5 w-5" />;
+      case "IMAGE_SOUND":
+        return (
+          <div className="flex flex-col gap-1">
+            <Image className="text-primary h-5 w-5" />
+            <Volume2 className="text-primary h-5 w-5" />
+          </div>
+        );
       case "IMAGE":
         return <Image className="text-primary h-5 w-5" />;
       case "GALLERY":
@@ -102,6 +109,8 @@ const ActionItem = ({
           size="sm"
           onClick={() => {
             console.log(`Manually triggering action ${action.id}`);
+            console.log(action);
+
             onActionStart?.(action);
           }}
         >

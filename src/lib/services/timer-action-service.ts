@@ -1,9 +1,16 @@
 import { env } from "@/env/server";
 import { db } from "@/lib/db";
 import { timer, timerAction } from "@/lib/db/schema/timer.schema";
-import { ACTION_UPDATED, CHANNEL, logger, TIMER_UPDATED } from "@/lib/utils";
-import { and, asc, eq, isNull } from "drizzle-orm";
+import {
+  ACTION_UPDATED,
+  CHANNEL,
+  convertToTimezoneAgnosticDate,
+  formatTimezoneAgnosticDate,
+  logger,
+} from "@/lib/utils";
+import { and, asc, eq, gt, isNotNull, isNull, not, or } from "drizzle-orm";
 import Pusher from "pusher";
+import { weddingEvent } from "../db/schema";
 
 const pusher = new Pusher({
   appId: env.PUSHER_APP_ID,
@@ -14,6 +21,18 @@ const pusher = new Pusher({
 });
 
 export class TimerActionService {
+  async getActionById(actionId: string) {
+    const action = await db.query.timerAction.findFirst({
+      where: eq(timerAction.id, actionId),
+    });
+
+    if (!action) {
+      logger(`Action not found: ${actionId}`);
+      throw new Error(`Action ${actionId} non trouvée`);
+    }
+
+    return action;
+  }
   /**
    * Récupère la prochaine action à jouer par rapport à l'action courante
    * Si aucune action n'est trouvée, complète la dernière action
@@ -24,9 +43,20 @@ export class TimerActionService {
    * @param actionId - L'ID de l'action courante (optionnel)
    * @returns L'action suivante avec son timing, ou null si le timer est terminé
    */
-  async getNextActionFromCurrent(timerId: string, actionId?: string) {
+  async getNextActionFromCurrent(timerId: string, actionId: string) {
+    const currentAction = await this.getActionById(actionId);
+
+    if (!currentAction) {
+      logger(`Current action not found: ${actionId}`);
+      throw new Error(`Current action ${actionId} non trouvée`);
+    }
+
     const actions = await db.query.timerAction.findMany({
-      where: and(eq(timerAction.timerId, timerId), isNull(timerAction.executedAt)),
+      where: and(
+        eq(timerAction.timerId, timerId),
+        isNull(timerAction.executedAt),
+        gt(timerAction.orderIndex, currentAction.orderIndex),
+      ),
       orderBy: [asc(timerAction.orderIndex)],
     });
 
@@ -34,34 +64,12 @@ export class TimerActionService {
       return null;
     }
 
-    // Si aucune actionId fournie, retourne la première action non exécutée
-    if (!actionId) {
-      const firstAction = actions[0];
-
-      return {
-        action: firstAction,
-      };
-    }
-
     // Trouve l'index de l'action courante
-    const currentIndex = actions.findIndex((a) => a.id === actionId);
-    if (currentIndex === -1) {
-      throw new Error(`Action ${actionId} non trouvée pour le timer ${timerId}`);
-    }
-
-    // S'il n'y a pas d'action suivante, retourne null (timer terminé)
-    if (currentIndex >= actions.length - 1) {
-      this.completeAction(actions[actions.length - 1].id);
-      // TODO : compléter le timer aussi, et mettre a jour le currentTimerId dans weddingEvent avec le suivant, mettre a jour startedAt et durationMinutes en fonction de l'heure reelle de fin du timer pour arriver a l'heure prevue de fin du timer, scheduledStartTime + durationMinutes (initial)
-      return null;
-    }
-
-    // Retourne l'action suivante avec son timing
-    const nextAction = actions[currentIndex + 1];
+    logger("[getNextActionFromCurrent] Actions depuis le service -- ");
+    console.log(actions);
 
     return {
-      action: nextAction,
-      // timing: nextActionTiming || null,
+      action: actions[0],
     };
   }
 
@@ -76,8 +84,32 @@ export class TimerActionService {
     });
 
     if (!action) {
-      logger(`Action not found: ${actionId}`);
+      logger(`Action not found dddd: ${actionId}`);
       throw new Error(`Action ${actionId} non trouvée`);
+    }
+
+    // get the timer of this action
+    const timerFromActionNotManualOrPunctual = await db.query.timer.findFirst({
+      where: and(
+        eq(timer.id, action.timerId),
+        not(eq(timer.isManual, false)),
+        or(not(eq(timer.durationMinutes, 0)), isNotNull(timer.durationMinutes)),
+      ),
+    });
+
+    if (timerFromActionNotManualOrPunctual) {
+      const isCurrentTimerInWedding = await db.query.weddingEvent.findFirst({
+        where: and(
+          eq(weddingEvent.currentTimerId, timerFromActionNotManualOrPunctual.id),
+        ),
+      });
+
+      if (!isCurrentTimerInWedding) {
+        logger(`Timer is not the current timer in wedding for action: ${actionId}`);
+        throw new Error(
+          `Timer is not the current timer in wedding for action: ${actionId}, you should display it before starting an action`,
+        );
+      }
     }
 
     if (action.status === "RUNNING") {
@@ -103,7 +135,7 @@ export class TimerActionService {
    * Complète une action
    */
   async completeAction(actionId: string) {
-    logger(`Completing action: ${actionId}`);
+    logger(`Completing action start for : ${actionId}`);
 
     const action = await db.query.timerAction.findFirst({
       where: eq(timerAction.id, actionId),
@@ -115,7 +147,8 @@ export class TimerActionService {
     }
 
     if (action.executedAt) {
-      return { action, alreadyCompleted: true };
+      logger(`Action already completed : ${actionId}`);
+      throw new Error(`Action already completed : ${actionId}`);
     }
 
     const now = new Date();
@@ -123,17 +156,23 @@ export class TimerActionService {
     await db
       .update(timerAction)
       .set({
-        executedAt: now,
+        executedAt: convertToTimezoneAgnosticDate(now),
         status: "COMPLETED",
       })
       .where(eq(timerAction.id, actionId));
 
+    const nextAction = await this.getNextActionFromCurrent(action.timerId, actionId);
+    logger("[completeAction] Next action from service -- ");
+    console.log(nextAction);
+
     await pusher.trigger(CHANNEL, ACTION_UPDATED, {
       actionId,
       timerId: action.timerId,
+      allActionsExecuted: !nextAction,
+      nextAction: nextAction ? nextAction.action : null,
     });
 
-    return { action, alreadyCompleted: false };
+    return { action, completedAt: formatTimezoneAgnosticDate(now) };
   }
 
   /**
@@ -156,85 +195,21 @@ export class TimerActionService {
     return { timerId, reset: true };
   }
 
-  /**
-   * Saute à X secondes avant la prochaine action (pour démo)
-   */
-  async jumpToBeforeNextAction(timerId: string, secondsBefore: number = 45) {
-    const currentTimer = await db.query.timer.findFirst({
-      where: eq(timer.id, timerId),
-      with: { actions: { orderBy: [asc(timerAction.orderIndex)] } },
-    });
-
-    if (!currentTimer) {
-      throw new Error(`Timer ${timerId} non trouvé`);
-    }
-
-    logger(`Jumping to ${secondsBefore} seconds before next action for timer ${timerId}`);
-
-    const nextAction = await this.getNextActionFromCurrent(timerId);
-
-    if (!nextAction) {
-      throw new Error("Aucune action suivante trouvée");
-    }
-
-    // Calculer le nouveau startedAt pour que l'action se déclenche X secondes avant l'heure prevue, il faut donc mettre a jour le startedAt du timer en fonction de l'offset de l'action et de la durée du timer
-
-    /**
-     * Si l'action doit se déclencher à scheduledStartTime, et dure durationMinutes et que l'offset de l'action est triggerOffsetMinutes et que l'action a un displayDurationSeconds
-     * Calculer l'heure de fin du timer théorique enfonction de l'heure a laquelle l'action a ete appelée
-     * triggeredManuallyAt = now
-     * newDurationMinutes = endScheduledTime - scheduledStartTime - secondsBefore
-     * Exemple:
-     * scheduledStartTime: 2025-10-05T18:00:00.000Z
-     * triggeredManuallyAt: 2025-10-05T18:02:00.000Z (maintenant)
-     * durationMinutes: 30 (30min)
-     * triggerOffsetMinutes: -2 (2min avant la fin)
-     * secondsBefore: 45
-     * newDurationMinutes = (2025-10-05T18:30:00.000Z - 2025-10-05T18:02:00.000Z) - 2 - 0.75 = 25.25 minutes
-     *
-     */
-    const triggeredManuallyAt = new Date();
-    const endScheduledTime = new Date(
-      (currentTimer.scheduledStartTime?.getTime() || 0) +
-        (currentTimer.durationMinutes || 0) * 60000,
-    );
-
-    let newDurationMinutes =
-      (endScheduledTime.getTime() - triggeredManuallyAt.getTime()) / 60000 -
-      nextAction.action.triggerOffsetMinutes -
-      secondsBefore / 60;
-
-    newDurationMinutes = (currentTimer.durationMinutes || 0) - newDurationMinutes;
-    newDurationMinutes = +newDurationMinutes.toFixed(2);
-
-    //old startedAt
-    logger(`Old durationMinutes for timer ${timerId}: ${currentTimer.durationMinutes}`);
-    logger(`New durationMinutes for timer ${timerId}: ${newDurationMinutes}`);
-
+  //resetAllTimersActions
+  async resetAllTimersActions() {
     await db
-      .update(timer)
+      .update(timerAction)
       .set({
-        startedAt: triggeredManuallyAt,
-        updatedAt: new Date(),
-        durationMinutes: newDurationMinutes > 0 ? newDurationMinutes : 0,
+        executedAt: null,
+        status: "PENDING",
       })
-      .where(eq(timer.id, timerId));
-    // .returning();
+      .where(isNull(timerAction.executedAt));
 
-    // logger(`Timer ${timerId} new startedAt: ${newStartedAt}`);
-    // console.log(test);
-
-    await pusher.trigger(CHANNEL, TIMER_UPDATED, {
-      timerId,
-      actionId: nextAction.action?.id,
-      secondsBefore,
+    await pusher.trigger(CHANNEL, ACTION_UPDATED, {
+      action: "resetAll",
     });
 
-    return {
-      timerId,
-      nextAction: nextAction.action,
-      triggersIn: secondsBefore,
-    };
+    return { resetAll: true };
   }
 }
 

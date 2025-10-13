@@ -1,5 +1,5 @@
 /* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
-import { TimerAction } from "@/lib/db/schema/timer.schema";
+import { Timer, TimerAction } from "@/lib/db/schema/timer.schema";
 import { getTimezoneAgnosticTimeDiff } from "@/lib/utils";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -12,6 +12,7 @@ export interface TimeLeft {
 }
 
 interface UseTimerWithActionsOptions {
+  timer: Timer;
   /**
    * La date de début du timer (scheduledStartTime)
    */
@@ -41,6 +42,12 @@ interface UseTimerWithActionsOptions {
    * Intervalle de mise à jour en millisecondes (défaut: 1000ms)
    */
   updateInterval?: number;
+
+  /**
+   * Action externe à forcer (par exemple depuis Pusher)
+   * Si fournie, elle remplace l'action courante calculée automatiquement
+   */
+  externalCurrentAction?: TimerAction | null;
 }
 
 interface UseTimerWithActionsReturn {
@@ -49,7 +56,12 @@ interface UseTimerWithActionsReturn {
   isRunning: boolean;
   currentAction: TimerAction | null;
   nextAction: TimerAction | null;
-  timeUntilNextAction: number; // en secondes
+  shouldNotifyAction: TimerAction | null; // Action prête à être déclenchée manuellement
+  /**
+   * Marque une action comme étant en cours de complétion (optimistic update)
+   * pour éviter qu'elle ne soit re-déclenchée pendant l'appel API
+   */
+  markActionAsCompleting: (actionId: string) => void;
 }
 
 /**
@@ -106,6 +118,7 @@ export function useTimerWithActions({
   onExpire,
   onActionTrigger,
   updateInterval = 1000,
+  externalCurrentAction,
 }: UseTimerWithActionsOptions): UseTimerWithActionsReturn {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
@@ -118,12 +131,13 @@ export function useTimerWithActions({
   const [isRunning, setIsRunning] = useState(false);
   const [currentAction, setCurrentAction] = useState<TimerAction | null>(null);
   const [nextAction, setNextAction] = useState<TimerAction | null>(null);
-  const [timeUntilNextAction, setTimeUntilNextAction] = useState(0);
+  const [shouldNotifyAction, setShouldNotifyAction] = useState<TimerAction | null>(null);
 
   const onExpireRef = useRef(onExpire);
   const onActionTriggerRef = useRef(onActionTrigger);
   const hasExpiredRef = useRef(false);
   const triggeredActionsRef = useRef<Set<string>>(new Set());
+  const completingActionsRef = useRef<Set<string>>(new Set()); // Actions en cours de complétion
 
   useEffect(() => {
     onExpireRef.current = onExpire;
@@ -143,7 +157,6 @@ export function useTimerWithActions({
       setIsRunning(false);
       setCurrentAction(null);
       setNextAction(null);
-      setTimeUntilNextAction(0);
       return;
     }
 
@@ -167,7 +180,6 @@ export function useTimerWithActions({
       setIsRunning(false);
       setCurrentAction(null);
       setNextAction(null);
-      setTimeUntilNextAction(0);
 
       if (!hasExpiredRef.current) {
         hasExpiredRef.current = true;
@@ -198,13 +210,30 @@ export function useTimerWithActions({
     // Gérer les actions
     if (actions && actions.length > 0) {
       // Trier les actions par ordre de déclenchement
+      // Exclure les actions complétées ET celles en cours de complétion
       const orderedActions = [...actions].filter(
-        (action) => action.status !== "COMPLETED",
+        (action) =>
+          action.status !== "COMPLETED" && !completingActionsRef.current.has(action.id),
       );
 
-      // Trouver l'action courante (celle dont le temps de déclenchement est passé mais pas encore exécutée)
+      console.log(
+        "🔍 Actions non complétées:",
+        orderedActions.map((a) => ({
+          id: a.id,
+          status: a.status,
+          executedAt: a.executedAt,
+          triggerOffset: a.triggerOffsetMinutes,
+          isCompleting: completingActionsRef.current.has(a.id),
+        })),
+      );
+
+      // Logique de gestion des actions :
+      // 1. currentAction = action avec status RUNNING (en cours d'exécution)
+      // 2. shouldNotifyAction = action PENDING dont le temps est passé (prête à être déclenchée)
+      // 3. nextAction = prochaine action PENDING future
       let foundCurrentAction: TimerAction | null = null;
       let foundNextAction: TimerAction | null = null;
+      let foundShouldNotifyAction: TimerAction | null = null;
       let timeToNext = 0;
 
       for (const action of orderedActions) {
@@ -216,34 +245,73 @@ export function useTimerWithActions({
         const diffToAction = actionTriggerTime.getTime() - now.getTime();
 
         if (diffToAction <= 0) {
-          // Action dont le temps est passé
-          if (!action.executedAt && !triggeredActionsRef.current.has(action.id)) {
-            foundCurrentAction = action;
-            triggeredActionsRef.current.add(action.id);
-            onActionTriggerRef.current?.(action);
-            break;
+          // Le temps de l'action est passé
+          if (!action.executedAt) {
+            if (action.status === "RUNNING") {
+              // Action en cours d'exécution
+              foundCurrentAction = action;
+
+              // Déclencher le callback seulement la première fois
+              if (!triggeredActionsRef.current.has(action.id)) {
+                triggeredActionsRef.current.add(action.id);
+                onActionTriggerRef.current?.(action);
+              }
+              break;
+            } else if (action.status === "PENDING") {
+              // Action prête à être déclenchée manuellement
+              foundShouldNotifyAction = action;
+              // Continue pour trouver la nextAction
+            }
           }
         } else {
-          // Première action future
-          foundNextAction = action;
-          timeToNext = Math.floor(diffToAction / 1000);
+          // Première action future non exécutée
+          if (!action.executedAt && action.status === "PENDING") {
+            foundNextAction = action;
+            timeToNext = Math.floor(diffToAction / 1000);
+          }
           break;
         }
       }
 
       setCurrentAction(foundCurrentAction);
       setNextAction(foundNextAction);
-      setTimeUntilNextAction(timeToNext);
+      setShouldNotifyAction(foundShouldNotifyAction);
     } else {
       setCurrentAction(null);
       setNextAction(null);
-      setTimeUntilNextAction(0);
+      setShouldNotifyAction(null);
     }
   }, [startTime, durationMinutes, actions]);
+
+  // Effet pour mettre à jour l'action courante si une action externe est fournie
+
+  useEffect(() => {
+    if (externalCurrentAction !== undefined) {
+      setCurrentAction(externalCurrentAction);
+
+      // Si une action externe est définie, déclencher le callback si pas encore fait
+      if (
+        externalCurrentAction &&
+        !triggeredActionsRef.current.has(externalCurrentAction.id)
+      ) {
+        triggeredActionsRef.current.add(externalCurrentAction.id);
+        onActionTriggerRef.current?.(externalCurrentAction);
+      }
+    }
+  }, [externalCurrentAction]);
 
   useEffect(() => {
     // Réinitialiser les actions déclenchées quand les actions changent
     triggeredActionsRef.current.clear();
+
+    // Nettoyer les actions marquées comme "en cours de complétion" si elles sont maintenant COMPLETED
+    const completedActionIds = actions
+      .filter((a) => a.status === "COMPLETED")
+      .map((a) => a.id);
+
+    completedActionIds.forEach((id) => {
+      completingActionsRef.current.delete(id);
+    });
   }, [actions]);
 
   useEffect(() => {
@@ -252,12 +320,24 @@ export function useTimerWithActions({
     return () => clearInterval(interval);
   }, [calculateState, updateInterval]);
 
+  const markActionAsCompleting = useCallback(
+    (actionId: string) => {
+      console.log(`🔒 Marquage de l'action ${actionId} comme en cours de complétion`);
+      completingActionsRef.current.add(actionId);
+
+      // Recalculer immédiatement l'état pour mettre à jour currentAction
+      calculateState();
+    },
+    [calculateState],
+  );
+
   return {
     timeLeft,
     isExpired,
     isRunning,
     currentAction,
     nextAction,
-    timeUntilNextAction,
+    shouldNotifyAction,
+    markActionAsCompleting,
   };
 }

@@ -6,47 +6,39 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { TimerAction } from "@/lib/db/schema/timer.schema";
-import { useTimerWithActions } from "@/lib/hooks/useTimerWithActions";
+import { useTimerWithPusher } from "@/lib/hooks/useTimerWithPusher";
 import { cn, createTimezoneAgnosticDate } from "@/lib/utils";
 import { useState } from "react";
 import ActionDisplay from "../timer/ActionDisplay";
 import ActionList from "../timer/ActionList";
-import { timersData } from "./timersData.mock";
+import { Button } from "../ui/button";
+import { timerWithActionsData } from "./timersData.mock";
 
 export function TimerWithActionsDemo() {
   // Créer un timer de test avec des actions
-  const [testStartTime] = useState<Date | null>(() => {
-    const now = new Date();
-    return createTimezoneAgnosticDate(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      now.getDate(),
-      now.getHours(),
-      now.getMinutes(),
-      now.getSeconds() + 10, // Démarre dans 10 secondes
-    );
-  });
+  const [testStartTime, setTestStartTime] = useState<Date | null>(null);
 
   // État pour forcer l'affichage d'une action manuellement
   const [manualCurrentAction, setManualCurrentAction] = useState<TimerAction | null>(
     null,
   );
+  const { actions, ...restTimer } = timerWithActionsData;
 
-  const [testActions, setTestActions] = useState<TimerAction[]>(timersData);
+  const [testActions, setTestActions] = useState<TimerAction[]>(actions);
 
-  const { timeLeft, isExpired, isRunning, currentAction, nextAction } =
-    useTimerWithActions({
-      startTime: testStartTime,
-      durationMinutes: 2, // Timer de 2 minutes
-      actions: testActions,
-      onExpire: () => {
-        console.log("🎉 Timer terminé!");
-        setManualCurrentAction(null);
-      },
-      onActionTrigger: (action) => {
-        console.log("🎬 Action déclenchée:", action.title);
-      },
-    });
+  const { timeLeft, isExpired, isRunning, currentAction } = useTimerWithPusher({
+    timer: restTimer,
+    startTime: testStartTime,
+    durationMinutes: restTimer.durationMinutes!, // Timer de 3.5 minutes
+    actions: actions,
+    onExpire: () => {
+      console.log("🎉 Timer terminé depuis le hook TUDUDM !");
+      // setManualCurrentAction(null);
+    },
+    onActionTrigger: (action) => {
+      console.log("🎬 Action déclenchée depuis le hook :", action);
+    },
+  });
 
   const handleClickStartAction = (action: TimerAction) => {
     console.log("Starting action manually:", action);
@@ -96,18 +88,45 @@ export function TimerWithActionsDemo() {
           return a;
         }),
       );
-      // Réinitialiser l'action manuelle
-      setManualCurrentAction(null);
+      // Demarrer le prochaine action si elle existe
+      const currentIndex = testActions.findIndex((a) => a.id === actionToComplete.id);
+      const next = testActions[currentIndex + 1];
+      if (next) {
+        setManualCurrentAction(next);
+      } else {
+        setManualCurrentAction(null);
+      }
     }
   };
 
   // Utiliser l'action manuelle si définie, sinon l'action du hook
-  const displayedAction = manualCurrentAction || currentAction;
+  const displayedAction = currentAction || manualCurrentAction;
+  console.log("Displayed action ----- ", displayedAction);
 
   return (
     <Card className="mx-auto w-full max-w-5xl gap-3">
       <CardHeader>
-        <CardTitle>Test des Actions</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <span>Test des Actions {currentAction?.id}</span>
+          <Button
+            size="sm"
+            onClick={() =>
+              setTestStartTime(() => {
+                const now = new Date();
+                return createTimezoneAgnosticDate(
+                  now.getFullYear(),
+                  now.getMonth() + 1,
+                  now.getDate(),
+                  now.getHours(),
+                  now.getMinutes(),
+                  now.getSeconds(),
+                );
+              })
+            }
+          >
+            Démarrer le Timer
+          </Button>
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         {/* Informations du timer */}
@@ -157,17 +176,15 @@ export function TimerWithActionsDemo() {
         <ActionList
           actions={testActions}
           isDemo={true}
-          currentAction={currentAction}
-          onActionStart={handleClickStartAction}
+          currentAction={displayedAction}
+          display="grid"
         />
 
         {/* Action courante */}
-        {displayedAction && (
+        {displayedAction && displayedAction.status === "RUNNING" && (
           <ActionDisplay
             currentAction={displayedAction}
-            actions={testActions}
             timeLeft={timeLeft}
-            timerId="test-timer"
             onActionComplete={handleActionComplete}
           />
         )}

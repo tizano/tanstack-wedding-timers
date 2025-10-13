@@ -355,8 +355,8 @@ async function seedWeddingData() {
       id: "timer-15",
       orderIndex: 15,
       name: "Carnival",
-      scheduledStartTime: new Date("2025-10-25T20:52:00.000Z"),
-      durationMinutes: 8,
+      scheduledStartTime: new Date("2025-10-25T20:50:00.000Z"),
+      durationMinutes: 10,
       status: "PENDING" as const,
       weddingEventId: realWeddingEvent[0]?.id,
       createdById: createdUsers[0]?.id,
@@ -385,7 +385,7 @@ async function seedWeddingData() {
       orderIndex: 1,
       name: "Video + Sound - Landing of the bride and groom",
       scheduledStartTime: new Date("2025-10-25T16:00:00.000Z"), // 16h à Recife (UTC-3)
-      durationMinutes: 30,
+      durationMinutes: 10,
       status: "PENDING" as const,
       weddingEventId: demoWeddingEvent[0]?.id,
       createdById: createdUsers[0]?.id,
@@ -423,7 +423,7 @@ async function seedWeddingData() {
       orderIndex: 4,
       name: "Sound - Speech of best men and maids of honour",
       scheduledStartTime: new Date("2025-10-25T17:05:00.000Z"),
-      durationMinutes: 40,
+      durationMinutes: 10,
       status: "PENDING" as const,
       weddingEventId: demoWeddingEvent[0]?.id,
       createdById: createdUsers[0]?.id,
@@ -460,7 +460,7 @@ async function seedWeddingData() {
       orderIndex: 7,
       name: "Sound - Table-by-table",
       scheduledStartTime: new Date("2025-10-25T18:15:00.000Z"),
-      durationMinutes: 45,
+      durationMinutes: 10,
       status: "PENDING" as const,
       weddingEventId: demoWeddingEvent[0]?.id,
       createdById: createdUsers[0]?.id,
@@ -485,7 +485,7 @@ async function seedWeddingData() {
       orderIndex: 9,
       name: "Sound - Bouquet toss",
       scheduledStartTime: new Date("2025-10-25T19:00:00.000Z"),
-      durationMinutes: 50,
+      durationMinutes: 10,
       status: "PENDING" as const,
       weddingEventId: demoWeddingEvent[0]?.id,
       createdById: createdUsers[0]?.id,
@@ -534,7 +534,7 @@ async function seedWeddingData() {
       orderIndex: 13,
       name: "Sound - French Shot",
       scheduledStartTime: new Date("2025-10-25T20:15:00.000Z"),
-      durationMinutes: 35,
+      durationMinutes: 10,
       status: "PENDING" as const,
       weddingEventId: demoWeddingEvent[0]?.id,
       createdById: createdUsers[0]?.id,
@@ -558,8 +558,8 @@ async function seedWeddingData() {
       id: "timer-demo-15",
       orderIndex: 15,
       name: "Carnival",
-      scheduledStartTime: new Date("2025-10-25T20:52:00.000Z"),
-      durationMinutes: 8,
+      scheduledStartTime: new Date("2025-10-25T20:50:00.000Z"),
+      durationMinutes: 10,
       status: "PENDING" as const,
       weddingEventId: demoWeddingEvent[0]?.id,
       createdById: createdUsers[0]?.id,
@@ -572,7 +572,7 @@ async function seedWeddingData() {
       orderIndex: 16,
       name: "Wedding cake",
       scheduledStartTime: new Date("2025-10-25T21:05:00.000Z"),
-      durationMinutes: 55,
+      durationMinutes: 10,
       status: "PENDING" as const,
       weddingEventId: demoWeddingEvent[0]?.id,
       createdById: createdUsers[0]?.id,
@@ -807,7 +807,7 @@ async function seedWeddingData() {
       contentFr: "Atterrissage des mariés",
       contentEn: "Landing of the bride and groom",
       contentBr: "Desembarque dos noivos",
-      displayDurationSec: 60 * 2, // 2 min
+      displayDurationSec: 15 * 2, // 2 min
     },
 
     // Timer 2 action: Sound - Landing of the bride and groom
@@ -834,7 +834,7 @@ async function seedWeddingData() {
       contentBr: "Photos",
       orderIndex: 0,
       createdAt: new Date(),
-      displayDurationSec: 60 * 2, // 2 min
+      displayDurationSec: 15 * 2, // 2 min
     },
     // Timer 4: Sound - Speech of best men and maids of honour
     {
@@ -847,24 +847,16 @@ async function seedWeddingData() {
       contentFr: "Discours des témoins",
       contentEn: "Speech of best men and maids of honour",
       contentBr: "Discurso das testemunhas",
-      triggerOffsetMinutes: -10,
-      displayDurationSec: 60 * 2, // 2 min
+      triggerOffsetMinutes: -2,
+      displayDurationSec: 15 * 2, // 2 min
     },
     // Timer 5: Activity - Phone
     {
       id: "asset-demo-timer-5-image",
       timerId: "timer-demo-5",
-      type: "IMAGE",
+      type: "IMAGE_SOUND",
       orderIndex: 0,
-      url: "/assets/images/telephone.png",
-      createdAt: new Date(),
-    },
-    {
-      id: "asset-demo-timer-5-sound",
-      timerId: "timer-demo-5",
-      type: "SOUND",
-      url: "/assets/sounds/audio-6-telephone.mp3",
-      orderIndex: 1,
+      urls: ["/assets/images/telephone.png", "/assets/sounds/audio-6-telephone.mp3"],
       createdAt: new Date(),
     },
 
@@ -888,24 +880,16 @@ async function seedWeddingData() {
       contentFr: "Activité table par table",
       contentEn: "Table-by-table activity",
       contentBr: "Atividade mesa por mesa",
-      triggerOffsetMinutes: -10,
-      displayDurationSec: 60 * 2, // 2 min
+      triggerOffsetMinutes: -2,
+      displayDurationSec: 15 * 2, // 2 min
     },
     // Timer 8: Activity - Digital game
     {
       id: "asset-demo-timer-8-image",
       timerId: "timer-demo-8",
-      type: "IMAGE",
-      url: "/assets/images/jeu.png",
+      type: "IMAGE_SOUND",
+      urls: ["/assets/images/jeu.png", "/assets/sounds/audio-8-cosmic-love.mp3"],
       orderIndex: 0,
-      createdAt: new Date(),
-    },
-    {
-      id: "asset-demo-timer-8-sound",
-      timerId: "timer-demo-8",
-      type: "SOUND",
-      url: "/assets/sounds/audio-8-cosmic-love.mp3",
-      orderIndex: 1,
       createdAt: new Date(),
     },
 
@@ -920,8 +904,8 @@ async function seedWeddingData() {
       contentFr: "Lancer de bouquet",
       contentEn: "Bouquet toss",
       contentBr: "Jogar o buquê",
-      triggerOffsetMinutes: -10,
-      displayDurationSec: 60 * 2, // 2 min
+      triggerOffsetMinutes: -2,
+      displayDurationSec: 15 * 2, // 2 min
     },
     // Timer 10: Sound - Starting Bouquet toss
     {
@@ -961,23 +945,15 @@ async function seedWeddingData() {
       contentFr: "Trou normand",
       contentEn: "French shot of Normandy",
       contentBr: "Shot francês da Normandia",
-      displayDurationSec: 60 * 2, // 2 min
+      displayDurationSec: 15 * 2, // 2 min
     },
     // Timer 14: Activity - Photomaton
     {
       id: "asset-demo-timer-14-image",
       timerId: "timer-demo-14",
-      type: "IMAGE",
-      url: "/assets/images/photomaton.png",
+      type: "IMAGE_SOUND",
+      urls: ["/assets/images/photomaton.png", "/assets/sounds/audio-14-photomaton.mp3"],
       orderIndex: 0,
-      createdAt: new Date(),
-    },
-    {
-      id: "asset-demo-timer-14-sound",
-      timerId: "timer-demo-14",
-      type: "SOUND",
-      url: "/assets/sounds/audio-14-photomaton.mp3",
-      orderIndex: 1,
       createdAt: new Date(),
     },
 
@@ -992,7 +968,7 @@ async function seedWeddingData() {
       contentFr: "Carnaval",
       contentEn: "Carnival",
       contentBr: "Carnaval",
-      displayDurationSec: 60 * 2, // 2 min
+      displayDurationSec: 15 * 2, // 2 min
     },
     // Timer 16: Wedding cake
     {
@@ -1005,7 +981,7 @@ async function seedWeddingData() {
       contentFr: "Gâteau de mariage",
       contentEn: "Wedding cake",
       contentBr: "Bolo do casamento",
-      displayDurationSec: 60 * 2, // 2 min
+      displayDurationSec: 15 * 2, // 2 min
     },
   ];
 

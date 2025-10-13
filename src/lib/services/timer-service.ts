@@ -4,13 +4,7 @@ import Pusher from "pusher";
 
 import { db } from "@/lib/db";
 import { timer, timerAction, UpdateTimer, weddingEvent } from "../db/schema";
-import {
-  ACTION_UPDATED,
-  CHANNEL,
-  convertToTimezoneAgnosticDate,
-  logger,
-  TIMER_UPDATED,
-} from "../utils";
+import { CHANNEL, convertToTimezoneAgnosticDate, logger, TIMER_UPDATED } from "../utils";
 
 const pusher = new Pusher({
   appId: env.PUSHER_APP_ID,
@@ -118,12 +112,6 @@ export class TimerService {
     logger(`Starting wedding demo for event: ${weddingEventId}`);
 
     const now = new Date();
-    // logger("Current time without now: " + now);
-    // logger(
-    //   "Current time with convertToTimezoneAgnosticDate(now): " +
-    //     convertToTimezoneAgnosticDate(now),
-    // );
-    // logger("Current time with convertToLocalDate(now): " + convertToLocalDate(now));
 
     // 1. Reset tous les timers et actions du mariage
     await this.resetWeddingFromNormal(weddingEventId, weddingEventIdToCopyFrom);
@@ -142,7 +130,7 @@ export class TimerService {
 
     // 3. Calculer les scheduledStartTime pour chaque timer
     // Le premier timer commence maintenant
-    let currentScheduledTime = now;
+    let currentScheduledTime = convertToTimezoneAgnosticDate(now);
     console.log("Initial now to updatedAt:", currentScheduledTime);
 
     for (let i = 0; i < allTimers.length; i++) {
@@ -164,7 +152,7 @@ export class TimerService {
       await db
         .update(timer)
         .set({
-          scheduledStartTime: convertToTimezoneAgnosticDate(currentScheduledTime),
+          scheduledStartTime: currentScheduledTime,
           updatedAt: now,
         })
         .where(eq(timer.id, currentTimer.id));
@@ -225,17 +213,16 @@ export class TimerService {
 
     if (!isPunctualOrManual) {
       // Pour les timers avec durée, vérifier qu'aucun autre timer avec durée n'est RUNNING
-      const runningTimerWithDuration = await db.query.timer.findFirst({
-        where: and(
-          eq(timer.weddingEventId, weddingEventId),
-          eq(timer.status, "RUNNING"),
-          gt(timer.durationMinutes, 0),
-        ),
-      });
-
-      if (runningTimerWithDuration) {
-        throw new Error("Un timer avec durée est déjà en cours. Attendez sa completion.");
-      }
+      // const runningTimerWithDuration = await db.query.timer.findFirst({
+      //   where: and(
+      //     eq(timer.weddingEventId, weddingEventId),
+      //     eq(timer.status, "RUNNING"),
+      //     gt(timer.durationMinutes, 0),
+      //   ),
+      // });
+      // if (runningTimerWithDuration) {
+      //   throw new Error("Un timer avec durée est déjà en cours. Attendez sa completion.");
+      // }
     }
 
     // Démarrer le timer
@@ -267,63 +254,6 @@ export class TimerService {
     });
 
     return { timerId, startTime: now };
-  }
-
-  /**
-   * Marque une action comme exécutée
-   * Appelé par le frontend quand une action se termine (média fini + displayDurationSec)
-   */
-  async executeAction(actionId: string) {
-    logger(`Executing action: ${actionId}`);
-
-    const action = await db.query.timerAction.findFirst({
-      where: eq(timerAction.id, actionId),
-    });
-
-    if (!action) {
-      logger(`Action not found: ${actionId}`);
-      throw new Error("Action non trouvée");
-    }
-
-    if (action.executedAt) {
-      // Déjà exécutée, ne rien faire
-      return { actionId, alreadyExecuted: true };
-    }
-
-    const now = new Date();
-
-    // Marquer l'action comme exécutée
-    await db
-      .update(timerAction)
-      .set({
-        executedAt: now,
-      })
-      .where(eq(timerAction.id, actionId));
-
-    // Récupérer toutes les actions du timer pour vérifier si c'était la dernière
-    const allActions = await db.query.timerAction.findMany({
-      where: eq(timerAction.timerId, action.timerId),
-      orderBy: [asc(timerAction.orderIndex)],
-    });
-
-    const allActionsExecuted = allActions.every(
-      (a) => a.executedAt !== null || a.id === actionId,
-    );
-
-    // Notifier via Pusher
-    await pusher.trigger(CHANNEL, ACTION_UPDATED, {
-      actionId,
-      timerId: action.timerId,
-      allActionsExecuted,
-    });
-
-    // Si c'était la dernière action, on peut considérer de compléter le timer
-    // MAIS on attend que le frontend appelle completeTimer() après le displayDurationSec
-    return {
-      actionId,
-      executedAt: now,
-      allActionsExecuted,
-    };
   }
 
   /**
