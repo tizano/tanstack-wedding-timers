@@ -70,12 +70,17 @@ const ActionItem = ({
 
   const renderTriggerText = (action: TimerAction) => {
     if (action.triggerOffsetMinutes === 0) {
-      return <span>Triggers start at the end of the timer</span>;
+      return (
+        <span>
+          Triggers start <strong>at the end</strong> of the timer
+        </span>
+      );
     }
     if (action.triggerOffsetMinutes < 0) {
       return (
         <span>
-          Trigger {Math.abs(action.triggerOffsetMinutes)} minutes before the end
+          Trigger <strong>{Math.abs(action.triggerOffsetMinutes)} minutes before</strong>{" "}
+          the end
         </span>
       );
     }
