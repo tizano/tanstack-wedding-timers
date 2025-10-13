@@ -261,7 +261,7 @@ export class TimerService {
   }
 
   /**
-   * Complète un timer et cherche l'id du suivant
+   * Complète un timer et cherche l'id du suivant (excluant les timers manuels et ponctuels)
    */
   async completeTimer(timerId: string) {
     const currentTimer = await db.query.timer.findFirst({
@@ -290,14 +290,11 @@ export class TimerService {
       })
       .where(eq(timer.id, timerId));
 
-    // Chercher le prochain timer (orderIndex supérieur)
-    const nextTimer = await db.query.timer.findFirst({
-      where: and(
-        eq(timer.weddingEventId, currentTimer.weddingEventId),
-        gt(timer.orderIndex, currentTimer.orderIndex),
-      ),
-      orderBy: [asc(timer.orderIndex)],
-    });
+    // Chercher le prochain timer non-manuel et non-ponctuel
+    const nextTimer = await this.getNextNonManualNonPunctualTimer(
+      currentTimer.weddingEventId,
+      currentTimer.orderIndex,
+    );
 
     // Notifier via Pusher
     await pusher.trigger(CHANNEL, TIMER_UPDATED, {
@@ -314,6 +311,34 @@ export class TimerService {
       completedAt: now,
       nextTimerId: nextTimer ? nextTimer.id : null,
     };
+  }
+
+  /**
+   * Récupère le prochain timer qui n'est ni manuel ni ponctuel
+   *
+   * Un timer est considéré comme manuel si :
+   * - durationMinutes === 0 ET scheduledStartTime === null
+   *
+   * Un timer est considéré comme ponctuel si :
+   * - durationMinutes === 0 ET scheduledStartTime !== null
+   *
+   * Un timer normal doit avoir durationMinutes > 0
+   */
+  async getNextNonManualNonPunctualTimer(
+    weddingEventId: string,
+    currentOrderIndex: number,
+  ) {
+    const nextTimerNonManualNonPunctual = await db.query.timer.findFirst({
+      where: and(
+        eq(timer.weddingEventId, weddingEventId),
+        gt(timer.orderIndex, currentOrderIndex),
+        eq(timer.isManual, false),
+        gt(timer.durationMinutes, 0),
+      ),
+      orderBy: [asc(timer.orderIndex)],
+    });
+
+    return nextTimerNonManualNonPunctual || null;
   }
 
   /**

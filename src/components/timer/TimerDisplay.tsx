@@ -52,7 +52,7 @@ const TimerDisplay = ({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        {!isDemo && (
+        {isDemo && (
           <div>
             <h2 className="mb-2 text-4xl font-bold">{timerData.name}</h2>
             <div className="">

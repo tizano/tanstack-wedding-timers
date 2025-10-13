@@ -30,9 +30,6 @@ type TimerCardProps = {
 export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardProps) {
   const navigate = useNavigate();
 
-  // Log pour debug : vérifier que timerData.actions est mis à jour
-  console.log(`[TimerCard] ${timerData.name} - actions:`, timerData.actions);
-
   const { timeLeft, isExpired, currentAction } = useTimerWithPusher({
     timer: timerData,
     startTime: timerData.scheduledStartTime,
@@ -64,13 +61,13 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
     },
   });
 
-  const isManualTimer =
-    timerData.durationMinutes === 0 && timerData.scheduledStartTime === null;
+  const isManualTimer = timerData.isManual;
 
   const isPunctualTimer =
-    timerData.durationMinutes === 0 && timerData.scheduledStartTime !== null;
+    !timerData.isManual &&
+    timerData.durationMinutes === 0 &&
+    timerData.scheduledStartTime !== null;
 
-  const timerIsPending = !isExpired && timerData.status === "PENDING";
   const timerNeedsToStart = isExpired && timerData.status === "PENDING";
   const timerIsStarted = isExpired && timerData.status === "RUNNING";
   const timerIsCompleted = isExpired && timerData.status === "COMPLETED";
@@ -80,7 +77,13 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
   // when the timer is pending and the scheduled start time has passed
   const pulseClassName = timerNeedsToStart ? " animate-pulse bg-[#A5D6A7]" : "";
 
+  const shouldShowCountdown = !isManualTimer && !timerIsCompleted;
+
   const renderCountdown = () => {
+    if (!shouldShowCountdown) {
+      return null;
+    }
+
     if (timerIsStarted) {
       return (
         <div className="text-center">
@@ -88,13 +91,7 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
         </div>
       );
     }
-    if (timerIsPending) {
-      return (
-        <div className="text-center">
-          <TimerCountdown timeLeft={timeLeft} />
-        </div>
-      );
-    }
+
     if (timerNeedsToStart) {
       return (
         <div className="text-center">
@@ -104,14 +101,13 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
         </div>
       );
     }
-    if (timerIsCompleted) {
-      return (
-        <div className="text-center">
-          <div className="text-primary text-2xl font-bold">Event Completed</div>
-        </div>
-      );
-    }
-    return null;
+
+    // Default: show countdown (for pending timers)
+    return (
+      <div className="text-center">
+        <TimerCountdown timeLeft={timeLeft} />
+      </div>
+    );
   };
 
   const renderStatusBadge = (status: Timer["status"]) => {
@@ -130,7 +126,7 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
         "mx-auto w-full max-w-2xl",
         isDemo && "overflow-hidden pt-0",
         pulseClassName,
-        timerData.status === "COMPLETED" && "pointer-events-none opacity-70",
+        timerIsCompleted && "cursor-not-allowed opacity-60",
         isCurrent && "border-2 border-blue-400 bg-blue-100/80",
       )}
     >
@@ -188,7 +184,9 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
 
         {timerData.durationMinutes !== null && timerData.durationMinutes > 0 && (
           <div className="flex items-center justify-center">
-            <Button onClick={() => mutateDisplayTimer()}>Display this timer</Button>
+            <Button disabled={timerIsCompleted} onClick={() => mutateDisplayTimer()}>
+              Display this timer
+            </Button>
           </div>
         )}
 
@@ -205,6 +203,7 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
       </CardContent>
       <CardFooter className="flex-1 items-end">
         <Button
+          disabled={timerIsCompleted}
           className="mt-1 w-full"
           onClick={() => {
             // Trigger the action for the manual timer
