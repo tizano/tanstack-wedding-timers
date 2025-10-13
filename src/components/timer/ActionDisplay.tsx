@@ -14,6 +14,7 @@ interface ActionDisplayProps {
   currentAction: TimerAction;
   timeLeft: TimeLeft;
   onActionComplete?: () => void;
+  markActionAsCompleting?: (actionId: string) => void;
 }
 
 /**
@@ -31,15 +32,24 @@ const ActionDisplay = ({
   currentAction,
   timeLeft,
   onActionComplete,
+  markActionAsCompleting,
 }: ActionDisplayProps) => {
   const [showMediaContent, setShowMediaContent] = useState(true);
   const [showTextContent, setShowTextContent] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [textContentTimer, setTextContentTimer] = useState<number | null>(null);
+  const [completingActionId, setCompletingActionId] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
 
-  console.log("[ActionDisplay] Rendu avec currentAction:", currentAction);
+  // L'action est en cours de complétion si son ID est marqué
+  // ET qu'elle est toujours l'action courante
+  const isCompleting = completingActionId === currentAction.id;
+
+  console.log("[ActionDisplay] Rendu avec currentAction:", currentAction, {
+    isCompleting,
+    completingActionId,
+  });
 
   const { mutate: mutateStartAction } = useMutation({
     mutationKey: [MUTATION_KEYS.START_ACTION],
@@ -101,7 +111,18 @@ const ActionDisplay = ({
   const { mutate: mutateCompleteAction } = useMutation({
     mutationKey: [MUTATION_KEYS.COMPLETE_ACTION],
     mutationFn: async () => {
-      // Simulate an API call to complete the action
+      console.log(
+        `[ActionDisplay] Marquage de l'action ${currentAction.id} comme en cours de complétion`,
+      );
+
+      // Marquer immédiatement comme "en cours de complétion" pour cacher l'affichage
+      setCompletingActionId(currentAction.id);
+
+      // Marquer dans le hook pour éviter qu'elle soit détectée comme currentAction
+      if (markActionAsCompleting) {
+        markActionAsCompleting(currentAction.id);
+      }
+
       return await completeAction({
         data: {
           actionId: currentAction.id,
@@ -117,6 +138,9 @@ const ActionDisplay = ({
         "[ActionDisplay][mutateCompleteAction] Remaining actions:",
         remainingActions,
       );
+
+      // NE PAS réinitialiser isCompleting ici pour éviter le glitch
+      // Il sera réinitialisé automatiquement quand currentAction changera via useEffect
 
       // Invalider les queries pour mettre à jour l'état
 
@@ -149,6 +173,8 @@ const ActionDisplay = ({
     },
     onError: (error) => {
       console.error("Error completing action:", error);
+      // Réinitialiser en cas d'erreur
+      setCompletingActionId(null);
     },
   });
 
@@ -271,6 +297,12 @@ const ActionDisplay = ({
       </>
     );
   };
+
+  // Ne rien afficher si l'action est en cours de complétion
+  if (isCompleting) {
+    console.log("[ActionDisplay] Action en cours de complétion, masquage de l'affichage");
+    return null;
+  }
 
   return (
     <>

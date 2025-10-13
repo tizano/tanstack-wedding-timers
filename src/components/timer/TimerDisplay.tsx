@@ -18,12 +18,18 @@ const TimerDisplay = ({
   isDemo = false,
   variant = "large",
 }: TimerDisplayProps) => {
-  const { timeLeft, currentAction, shouldNotifyAction, isExpired, isRunning } =
-    useTimerWithPusher({
-      timer: timerData,
-      startTime: timerData.scheduledStartTime,
-      durationMinutes: timerData.durationMinutes ?? 0,
-    });
+  const {
+    timeLeft,
+    currentAction,
+    shouldNotifyAction,
+    isExpired,
+    isRunning,
+    markActionAsCompleting,
+  } = useTimerWithPusher({
+    timer: timerData,
+    startTime: timerData.scheduledStartTime,
+    durationMinutes: timerData.durationMinutes ?? 0,
+  });
 
   // Récupérer les données du PusherProvider pour détecter les actions ponctuelles
   const { updatedAction } = usePusher();
@@ -72,7 +78,7 @@ const TimerDisplay = ({
         )}
 
         {/* Notification visuelle: action prête à être déclenchée */}
-        {shouldNotifyAction && !currentAction && (
+        {isDemo && shouldNotifyAction && !currentAction && (
           <div className="animate-pulse rounded-lg bg-amber-100 p-4 text-amber-900 dark:bg-amber-900 dark:text-amber-100">
             <p className="text-lg font-bold">⏰ Action prête !</p>
             <p className="text-sm">{shouldNotifyAction.title}</p>
@@ -90,8 +96,10 @@ const TimerDisplay = ({
               currentAction,
             )}
             <ActionDisplay
+              key={currentAction.id}
               currentAction={currentAction}
               timeLeft={timeLeft}
+              markActionAsCompleting={markActionAsCompleting}
               onActionComplete={() => {
                 /* Optionally handle action completion at the TimerDisplay level */
               }}
@@ -107,8 +115,10 @@ const TimerDisplay = ({
               punctualAction,
             )}
             <ActionDisplay
+              key={punctualAction.id}
               currentAction={punctualAction}
               timeLeft={timeLeft}
+              markActionAsCompleting={markActionAsCompleting}
               onActionComplete={() => {
                 console.log("[TimerDisplay] Action ponctuelle terminée");
               }}

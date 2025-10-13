@@ -79,13 +79,15 @@ export default function ActionList({
           display === "grid" && "grid grid-cols-1 gap-2 space-y-0 xl:grid-cols-2",
         )}
       >
-        {actions.map((action) => (
+        {actions.map((action, index) => (
           <ActionItem
             key={action.id}
             action={action}
             onActionStart={(action) => handleStartAction(action)}
             currentAction={currentActionFromProps}
-            shouldPulse={shouldPulse}
+            shouldPulse={
+              currentActionFromProps?.executedAt !== null && shouldPulse && index === 0
+            }
           />
         ))}
       </div>

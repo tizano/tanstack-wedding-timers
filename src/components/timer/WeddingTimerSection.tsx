@@ -76,10 +76,9 @@ function WeddingTimerSection({
           </div>
           {currentTimer && (
             <div className="text-gray-100">
-              <TimerDisplay timerData={currentTimer} hideTitle variant="large" />
+              <TimerDisplay timerData={currentTimer} isDemo={isDemo} variant="large" />
             </div>
           )}
-          {/* {isDemo && <TimerWithActionsDemo />} */}
         </div>
       </article>
     </section>
