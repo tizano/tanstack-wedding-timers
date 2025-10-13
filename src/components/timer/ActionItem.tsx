@@ -113,12 +113,6 @@ const ActionItem = ({
           <span>
             {action.type} • {renderActionUrl(action)}
           </span>
-          {action.displayDurationSec !== null && (
-            <span>
-              {" "}
-              Display content during {action.displayDurationSec}s after the media end
-            </span>
-          )}
           {renderTriggerText(action)}
         </div>
       </div>

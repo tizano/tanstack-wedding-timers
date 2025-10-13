@@ -24,8 +24,7 @@ interface ActionDisplayProps {
  * 1. Affiche le média avec overlay
  * 2. Si triggerOffsetMinutes négatif, affiche le timer en petit dans l'overlay
  * 3. Affiche le titre si présent
- * 4. Après la fin du média, affiche les contenus multilingues pendant displayDurationSec
- * 5. Une fois terminé, marque l'action comme complétée et cherche la suivante
+ * 4. Une fois terminé, marque l'action comme complétée et cherche la suivante
  */
 const ActionDisplay = ({
   currentAction,
