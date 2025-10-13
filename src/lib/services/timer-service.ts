@@ -129,10 +129,10 @@ export class TimerService {
     logger(`Total timers to schedule: ${allTimers.length}`);
 
     // 3. Calculer les scheduledStartTime pour chaque timer
-    // Le premier timer commence maintenant + 5 minutes
+    // Le premier timer commence maintenant + 1.5 minutes
     let currentScheduledTime: Date | null = convertToTimezoneAgnosticDate(now);
     if (currentScheduledTime) {
-      currentScheduledTime = new Date(currentScheduledTime.getTime() + 5 * 60000);
+      currentScheduledTime = new Date(currentScheduledTime.getTime() + 1.5 * 60000);
     }
     console.log("Initial now to updatedAt:", currentScheduledTime);
 

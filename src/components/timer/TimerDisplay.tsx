@@ -58,7 +58,7 @@ const TimerDisplay = ({
 
   // Afficher les contenus si la première action en a et que le timer est en cours
   const shouldShowContent =
-    isRunning &&
+    (isRunning || isExpired) &&
     firstAction &&
     (firstAction.contentFr || firstAction.contentEn || firstAction.contentBr);
 

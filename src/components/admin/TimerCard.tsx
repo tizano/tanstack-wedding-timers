@@ -77,11 +77,19 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
   // when the timer is pending and the scheduled start time has passed
   const pulseClassName = timerNeedsToStart ? " animate-pulse bg-[#A5D6A7]" : "";
 
-  const shouldShowCountdown = !isManualTimer && !timerIsCompleted;
+  const shouldShowCountdown = !isManualTimer;
 
   const renderCountdown = () => {
     if (!shouldShowCountdown) {
       return null;
+    }
+
+    if (timerIsCompleted) {
+      return (
+        <div className="text-center">
+          <div className="text-primary text-2xl font-bold">Event Completed</div>
+        </div>
+      );
     }
 
     if (timerIsStarted) {
@@ -126,7 +134,7 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
         "mx-auto w-full max-w-2xl",
         isDemo && "overflow-hidden pt-0",
         pulseClassName,
-        timerIsCompleted && "cursor-not-allowed opacity-60",
+        timerIsCompleted && "cursor-not-allowed bg-blue-100/80 opacity-60",
         isCurrent && "border-2 border-blue-400 bg-blue-100/80",
       )}
     >
@@ -182,13 +190,15 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
         {/* Countdown Display */}
         {!isManualTimer && renderCountdown()}
 
-        {timerData.durationMinutes !== null && timerData.durationMinutes > 0 && (
-          <div className="flex items-center justify-center">
-            <Button disabled={timerIsCompleted} onClick={() => mutateDisplayTimer()}>
-              Display this timer
-            </Button>
-          </div>
-        )}
+        {timerData.durationMinutes !== null &&
+          timerData.durationMinutes > 0 &&
+          !isCurrent && (
+            <div className="flex items-center justify-center">
+              <Button disabled={timerIsCompleted} onClick={() => mutateDisplayTimer()}>
+                Display this timer
+              </Button>
+            </div>
+          )}
 
         {/* Status Badge */}
         {renderStatusBadge(timerData.status)}
