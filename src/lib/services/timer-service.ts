@@ -176,7 +176,7 @@ export class TimerService {
       .where(eq(timer.weddingEventId, weddingEventId));
 
     // 5. Démarrer le premier timer avec durée
-    await this.startTimer(firstTimer.id, weddingEventId);
+    await this.startTimer(firstTimer.id);
 
     // 6. Notifier via Pusher que le mariage demo a démarré
     await pusher.trigger(CHANNEL, TIMER_UPDATED, {
@@ -184,6 +184,7 @@ export class TimerService {
       timerId: firstTimer.id,
       action: "wedding-demo-started",
       startTime: now.toISOString(),
+      updatedAt: now.toISOString(),
     });
 
     return { timerId: firstTimer.id, startTime: now };
@@ -193,8 +194,8 @@ export class TimerService {
    * Démarre un timer spécifique
    * Utilisé pour le démarrage du mariage
    */
-  async startTimer(timerId: string, weddingEventId: string) {
-    logger(`Starting timer: ${timerId} for wedding event: ${weddingEventId}`);
+  async startTimer(timerId: string) {
+    logger(`[startTimer] Starting timer: ${timerId}`);
 
     const currentTimer = await db.query.timer.findFirst({
       where: eq(timer.id, timerId),
@@ -225,6 +226,8 @@ export class TimerService {
       // }
     }
 
+    const weddingEventId = currentTimer.weddingEventId;
+
     // Démarrer le timer
     const now = new Date();
     await db
@@ -248,9 +251,10 @@ export class TimerService {
     // Notifier via Pusher
     await pusher.trigger(CHANNEL, TIMER_UPDATED, {
       timerId,
-      weddingEventId,
+      weddingEventId: weddingEventId,
       action: "started",
       startTime: now.toUTCString(),
+      updatedAt: now.toISOString(),
     });
 
     return { timerId, startTime: now };
@@ -302,6 +306,7 @@ export class TimerService {
       action: "completed",
       nextTimerId: nextTimer ? nextTimer.id : null,
       completedAt: now.toUTCString(),
+      updatedAt: now.toISOString(),
     });
 
     return {
@@ -472,6 +477,7 @@ export class TimerService {
     await pusher.trigger(CHANNEL, TIMER_UPDATED, {
       weddingEventId,
       action: "reset",
+      updatedAt: now.toISOString(),
     });
 
     return { success: true };

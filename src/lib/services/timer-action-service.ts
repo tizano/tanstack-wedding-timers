@@ -8,7 +8,7 @@ import {
   formatTimezoneAgnosticDate,
   logger,
 } from "@/lib/utils";
-import { and, asc, eq, gt, isNotNull, isNull, not, or } from "drizzle-orm";
+import { and, asc, eq, gt, isNull } from "drizzle-orm";
 import Pusher from "pusher";
 import { weddingEvent } from "../db/schema";
 
@@ -89,19 +89,24 @@ export class TimerActionService {
     }
 
     // get the timer of this action
-    const timerFromActionNotManualOrPunctual = await db.query.timer.findFirst({
-      where: and(
-        eq(timer.id, action.timerId),
-        not(eq(timer.isManual, false)),
-        or(not(eq(timer.durationMinutes, 0)), isNotNull(timer.durationMinutes)),
-      ),
+    const actionTimer = await db.query.timer.findFirst({
+      where: eq(timer.id, action.timerId),
     });
 
-    if (timerFromActionNotManualOrPunctual) {
+    if (!actionTimer) {
+      logger(`Timer not found for action: ${actionId}`);
+      throw new Error(`Timer not found for action: ${actionId}`);
+    }
+
+    // Si c'est un timer normal (pas manuel/ponctuel), vérifier qu'il est bien le current timer
+    const isNotManualOrPunctual =
+      !actionTimer.isManual &&
+      actionTimer.durationMinutes !== null &&
+      actionTimer.durationMinutes > 0;
+
+    if (isNotManualOrPunctual) {
       const isCurrentTimerInWedding = await db.query.weddingEvent.findFirst({
-        where: and(
-          eq(weddingEvent.currentTimerId, timerFromActionNotManualOrPunctual.id),
-        ),
+        where: and(eq(weddingEvent.currentTimerId, actionTimer.id)),
       });
 
       if (!isCurrentTimerInWedding) {
@@ -111,21 +116,27 @@ export class TimerActionService {
         );
       }
     }
+    // Pour les timers manuels/ponctuels, pas besoin de vérifier le currentTimer
+    // L'action sera affichée en overlay via le PusherProvider
 
     if (action.status === "RUNNING") {
       return { action, alreadyRunning: true };
     }
 
+    const now = new Date();
+
     await db
       .update(timerAction)
       .set({
         status: "RUNNING",
+        updatedAt: now,
       })
       .where(eq(timerAction.id, actionId));
 
     await pusher.trigger(CHANNEL, ACTION_UPDATED, {
       actionId,
       timerId: action.timerId,
+      updatedAt: now.toISOString(),
     });
 
     return { action, alreadyRunning: false };
@@ -158,6 +169,7 @@ export class TimerActionService {
       .set({
         executedAt: convertToTimezoneAgnosticDate(now),
         status: "COMPLETED",
+        updatedAt: now,
       })
       .where(eq(timerAction.id, actionId));
 
@@ -165,9 +177,13 @@ export class TimerActionService {
     logger("[completeAction] Next action from service -- ");
     console.log(nextAction);
 
+    // Pas besoin de restaurer le timer précédent car les actions ponctuelles
+    // sont affichées en overlay dans le frontend
+
     await pusher.trigger(CHANNEL, ACTION_UPDATED, {
       actionId,
       timerId: action.timerId,
+      updatedAt: now.toISOString(),
       allActionsExecuted: !nextAction,
       nextAction: nextAction ? nextAction.action : null,
     });

@@ -71,6 +71,7 @@ export const timerAction = pgTable("timer_action", {
   displayDurationSec: integer("display_duration_sec"),
 
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
   executedAt: timestamp("executed_at"),
 });
 

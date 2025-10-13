@@ -1,0 +1,1 @@
+ALTER TABLE "timer_action" ADD COLUMN "updated_at" timestamp DEFAULT now() NOT NULL;

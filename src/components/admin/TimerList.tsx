@@ -1,7 +1,7 @@
 import { resetAllTimersActions } from "@/lib/actions/timer-actions.action";
-import { getAllTimers } from "@/lib/actions/timer.action";
+import { getAllTimers, getCurrentTimer } from "@/lib/actions/timer.action";
 import { QUERY_KEYS } from "@/lib/constant/constant";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import EnableDemoButton from "../demo/EnableDemoButton";
@@ -16,6 +16,15 @@ export default function TimerList({ timersWithActions, isDemo }: TimerListProps)
   const navigate = useNavigate();
   const resetTimers = useServerFn(resetAllTimersActions);
   const queryClient = useQueryClient();
+  const weddingEventId = isDemo ? "wedding-event-demo" : "wedding-event-1";
+
+  const { data: currentTimer } = useSuspenseQuery({
+    queryKey: [QUERY_KEYS.TIMER, weddingEventId],
+    queryFn: () =>
+      getCurrentTimer({
+        data: { weddingEventId },
+      }),
+  });
 
   if (timersWithActions.length === 0) {
     return <div>No timers found.</div>;
@@ -80,7 +89,12 @@ export default function TimerList({ timersWithActions, isDemo }: TimerListProps)
       <div className="mb-4">{renderDemoButtons()}</div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {timersWithActions.map((timer) => (
-          <TimerCard key={timer.id} timerData={timer} isDemo={isDemo} />
+          <TimerCard
+            key={timer.id}
+            timerData={timer}
+            isDemo={isDemo}
+            isCurrent={timer.id === currentTimer?.id}
+          />
         ))}
       </div>
     </>

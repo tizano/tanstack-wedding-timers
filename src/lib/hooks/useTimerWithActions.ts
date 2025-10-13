@@ -48,6 +48,7 @@ interface UseTimerWithActionsOptions {
    * Si fournie, elle remplace l'action courante calculée automatiquement
    */
   externalCurrentAction?: TimerAction | null;
+  displayLog?: boolean; // Pour activer les logs de debug
 }
 
 interface UseTimerWithActionsReturn {
@@ -119,6 +120,7 @@ export function useTimerWithActions({
   onActionTrigger,
   updateInterval = 1000,
   externalCurrentAction,
+  displayLog = false,
 }: UseTimerWithActionsOptions): UseTimerWithActionsReturn {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
@@ -216,17 +218,6 @@ export function useTimerWithActions({
           action.status !== "COMPLETED" && !completingActionsRef.current.has(action.id),
       );
 
-      console.log(
-        "🔍 Actions non complétées:",
-        orderedActions.map((a) => ({
-          id: a.id,
-          status: a.status,
-          executedAt: a.executedAt,
-          triggerOffset: a.triggerOffsetMinutes,
-          isCompleting: completingActionsRef.current.has(a.id),
-        })),
-      );
-
       // Logique de gestion des actions :
       // 1. currentAction = action avec status RUNNING (en cours d'exécution)
       // 2. shouldNotifyAction = action PENDING dont le temps est passé (prête à être déclenchée)
@@ -322,13 +313,15 @@ export function useTimerWithActions({
 
   const markActionAsCompleting = useCallback(
     (actionId: string) => {
-      console.log(`🔒 Marquage de l'action ${actionId} comme en cours de complétion`);
+      if (displayLog) {
+        console.log(`🔒 Marquage de l'action ${actionId} comme en cours de complétion`);
+      }
       completingActionsRef.current.add(actionId);
 
       // Recalculer immédiatement l'état pour mettre à jour currentAction
       calculateState();
     },
-    [calculateState],
+    [calculateState, displayLog],
   );
 
   return {

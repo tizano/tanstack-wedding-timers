@@ -1,5 +1,6 @@
 import { startAction } from "@/lib/actions/timer-actions.action";
-import { MUTATION_KEYS } from "@/lib/constant/constant";
+import { updateTimer } from "@/lib/actions/timer.action";
+import { MUTATION_KEYS, QUERY_KEYS } from "@/lib/constant/constant";
 import type { TimerAction } from "@/lib/db/schema/timer.schema";
 import { cn, logger } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -22,6 +23,18 @@ export default function ActionList({
   const [currentAction, setCurrentAction] = useState<TimerAction | null>(null);
   const queryClient = useQueryClient();
 
+  const { mutate: mutateTimerStartDate } = useMutation({
+    mutationKey: [MUTATION_KEYS.START_ACTION],
+    mutationFn: async (timerId: string) => {
+      return await updateTimer({
+        data: {
+          id: timerId,
+          startedAt: new Date(),
+        },
+      });
+    },
+  });
+
   const { mutate: mutateStartAction } = useMutation({
     mutationKey: [MUTATION_KEYS.START_ACTION],
     mutationFn: async () => {
@@ -38,9 +51,10 @@ export default function ActionList({
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: ({ action }) => {
       // Optionally refetch or update the timer data after mutation
-      queryClient.invalidateQueries({ queryKey: ["timers"] });
+      mutateTimerStartDate(action.timerId);
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ALL_TIMERS] });
       toast.success("Timer action triggered successfully!");
     },
     onError: (error) => {
@@ -51,7 +65,6 @@ export default function ActionList({
   if (!actions.length) return null;
 
   const handleStartAction = (action: TimerAction) => {
-    console.log("iocicici");
     setCurrentAction(action);
     mutateStartAction();
   };

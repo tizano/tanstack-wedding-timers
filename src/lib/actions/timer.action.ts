@@ -27,7 +27,6 @@ const updateTimerSchemaInput = z.object({
 
 const startTimerSchema = z.object({
   timerId: z.string(),
-  weddingEventId: z.string(),
 });
 
 // Query functions (GET) - Public
@@ -72,7 +71,7 @@ export const startTimer = createServerFn({ method: "POST" })
   .inputValidator(startTimerSchema)
   .middleware([authMiddleware])
   .handler(async ({ data }) => {
-    return await timerService.startTimer(data.timerId, data.weddingEventId);
+    return await timerService.startTimer(data.timerId);
   });
 
 export const completeTimer = createServerFn({ method: "POST" })

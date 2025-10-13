@@ -1,9 +1,10 @@
 import { completeAction, startAction } from "@/lib/actions/timer-actions.action";
-import { MUTATION_KEYS } from "@/lib/constant/constant";
+import { completeTimer, startTimer } from "@/lib/actions/timer.action";
+import { MUTATION_KEYS, QUERY_KEYS } from "@/lib/constant/constant";
 import { type TimerAction } from "@/lib/db/schema/timer.schema";
 import { TimeLeft } from "@/lib/hooks/useTimerWithActions";
 import { cn } from "@/lib/utils";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ImageAction, ImageWithSound, SoundAction, VideoAction } from "./actions";
 import ContentAction from "./actions/ContentAction";
@@ -37,6 +38,10 @@ const ActionDisplay = ({
   const [showTextContent, setShowTextContent] = useState(false);
   const [textContentTimer, setTextContentTimer] = useState<number | null>(null);
 
+  const queryClient = useQueryClient();
+
+  console.log("[ActionDisplay] Rendu avec currentAction:", currentAction);
+
   const { mutate: mutateStartAction } = useMutation({
     mutationKey: [MUTATION_KEYS.START_ACTION],
     mutationFn: async (actionId: string) => {
@@ -54,8 +59,47 @@ const ActionDisplay = ({
     },
   });
 
+  const { mutate: mutateStartTimer } = useMutation({
+    mutationKey: [MUTATION_KEYS.START_TIMER],
+    mutationFn: async (timerId: string) => {
+      return await startTimer({
+        data: {
+          timerId,
+        },
+      });
+    },
+    onSuccess: () => {
+      console.log("Next timer started automatically");
+    },
+    onError: (error) => {
+      console.error("Error starting next timer:", error);
+    },
+  });
+
+  const { mutate: mutateCompleteTimer } = useMutation({
+    mutationKey: [MUTATION_KEYS.UPDATE_TIMER],
+    mutationFn: async (timerId: string) => {
+      return await completeTimer({
+        data: {
+          timerId,
+        },
+      });
+    },
+    onSuccess: ({ nextTimerId }) => {
+      console.log("Timer completed successfully");
+      if (nextTimerId) {
+        console.log(`Next timer to start automatically: ${nextTimerId}`);
+        mutateStartTimer(nextTimerId);
+      }
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ALL_TIMERS] });
+    },
+    onError: (error) => {
+      console.error("Error completing timer:", error);
+    },
+  });
+
   const { mutate: mutateCompleteAction } = useMutation({
-    mutationKey: ["completeAction"],
+    mutationKey: [MUTATION_KEYS.COMPLETE_ACTION],
     mutationFn: async () => {
       // Simulate an API call to complete the action
       return await completeAction({
@@ -65,7 +109,12 @@ const ActionDisplay = ({
       });
     },
     onSuccess: () => {
-      console.log("[ActionDisplay][mutateCompleteAction] Action completed successfully");
+      console.log(
+        "[ActionDisplay][mutateCompleteAction] Action completed successfully",
+        currentAction,
+      );
+      console.log("[ActionDisplay][mutateCompleteAction] Next action", nextAction);
+
       // Vérifier si la prochaine action doit être déclenchée automatiquement
       if (nextAction && nextAction.triggerOffsetMinutes === 0) {
         console.log(
@@ -74,7 +123,15 @@ const ActionDisplay = ({
         console.log(nextAction);
 
         mutateStartAction(nextAction.id);
+      } else {
+        // Si pas d'action suivante, on complete le timer
+        console.log(
+          "[ActionDisplay] Aucune action suivante à déclencher automatiquement.",
+        );
+        mutateCompleteTimer(currentAction.timerId);
       }
+
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ALL_TIMERS] });
     },
     onError: (error) => {
       console.error("Error completing action:", error);

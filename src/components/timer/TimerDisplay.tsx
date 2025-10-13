@@ -1,6 +1,8 @@
 import { useTimerWithPusher } from "@/lib/hooks/useTimerWithPusher";
+import { usePusher } from "@/lib/provider/puhser/pusher-provider";
 import { TimerWithActions } from "@/lib/types/timer.type";
 import { cn } from "@/lib/utils";
+import { useMemo } from "react";
 import { Badge } from "../ui/badge";
 import ActionDisplay from "./ActionDisplay";
 import TimerCountdown from "./TimerCountdown";
@@ -16,8 +18,6 @@ const TimerDisplay = ({
   isDemo = false,
   variant = "large",
 }: TimerDisplayProps) => {
-  // const [displayAction] = useState<TimerAction | null>(null);
-  const { actions, ...restTimer } = timerData;
   const {
     timeLeft,
     currentAction,
@@ -26,11 +26,28 @@ const TimerDisplay = ({
     isExpired,
     isRunning,
   } = useTimerWithPusher({
-    timer: restTimer,
+    timer: timerData,
     startTime: timerData.scheduledStartTime,
     durationMinutes: timerData.durationMinutes ?? 0,
-    actions: actions,
   });
+
+  // Récupérer les données du PusherProvider pour détecter les actions ponctuelles
+  const { updatedAction } = usePusher();
+
+  // Détecter si une action ponctuelle d'un autre timer doit être affichée
+  const punctualAction = useMemo(() => {
+    if (!updatedAction || !updatedAction.punctualTimer) return null;
+
+    // Trouver l'action mise à jour dans le timer ponctuel
+    const action = updatedAction.punctualTimer.actions.find(
+      (a) => a.id === updatedAction.actionId,
+    );
+
+    if (!action || action.status !== "RUNNING") return null;
+
+    console.log("[TimerDisplay] Action ponctuelle détectée:", action);
+    return action;
+  }, [updatedAction]);
 
   return (
     <div className="space-y-6">
@@ -73,14 +90,38 @@ const TimerDisplay = ({
 
         {/* Afficher l'action courante - uniquement si elle a le statut RUNNING */}
         {currentAction && currentAction.status === "RUNNING" && (
-          <ActionDisplay
-            currentAction={currentAction}
-            nextAction={nextAction}
-            timeLeft={timeLeft}
-            onActionComplete={() => {
-              /* Optionally handle action completion at the TimerDisplay level */
-            }}
-          />
+          <>
+            {console.log(
+              "[TimerDisplay] Affichage de ActionDisplay avec:",
+              currentAction,
+            )}
+            <ActionDisplay
+              currentAction={currentAction}
+              nextAction={nextAction}
+              timeLeft={timeLeft}
+              onActionComplete={() => {
+                /* Optionally handle action completion at the TimerDisplay level */
+              }}
+            />
+          </>
+        )}
+
+        {/* Afficher l'action ponctuelle d'un autre timer (overlay par-dessus le timer courant) */}
+        {punctualAction && (
+          <>
+            {console.log(
+              "[TimerDisplay] Affichage de l'action ponctuelle:",
+              punctualAction,
+            )}
+            <ActionDisplay
+              currentAction={punctualAction}
+              nextAction={null}
+              timeLeft={timeLeft}
+              onActionComplete={() => {
+                console.log("[TimerDisplay] Action ponctuelle terminée");
+              }}
+            />
+          </>
         )}
       </div>
     </div>

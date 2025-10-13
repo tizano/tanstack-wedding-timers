@@ -23,20 +23,17 @@ import StatusBadge from "./StatusBadge";
 
 type TimerCardProps = {
   timerData: TimerWithActions;
-
+  isCurrent?: boolean;
   isDemo?: boolean;
 };
 
-export default function TimerCard({ timerData, isDemo }: TimerCardProps) {
+export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardProps) {
   const navigate = useNavigate();
 
-  const { actions, ...restTimer } = timerData;
-
   const { timeLeft, isExpired, currentAction } = useTimerWithPusher({
-    timer: restTimer,
+    timer: timerData,
     startTime: timerData.scheduledStartTime,
     durationMinutes: timerData.durationMinutes ?? 0,
-    actions: actions,
     onExpire: () => {
       console.log("Timer expired for:", timerData.name);
     },
@@ -52,7 +49,6 @@ export default function TimerCard({ timerData, isDemo }: TimerCardProps) {
       return await startTimer({
         data: {
           timerId: timerData.id,
-          weddingEventId: timerData.weddingEventId,
         },
       });
     },
@@ -130,14 +126,22 @@ export default function TimerCard({ timerData, isDemo }: TimerCardProps) {
         "mx-auto w-full max-w-2xl",
         isDemo && "overflow-hidden pt-0",
         pulseClassName,
-        timerIsCompleted && "pointer-events-none opacity-70",
+        timerData.status === "COMPLETED" && "pointer-events-none opacity-70",
+        isCurrent && "border-2 border-blue-400 bg-blue-100/80",
       )}
     >
-      {isDemo && (
-        <div className="mb-0 flex items-center justify-center bg-yellow-100 p-2 text-center text-amber-700">
-          <p className="font-bold">Demo</p>
-        </div>
-      )}
+      <div>
+        {isDemo && (
+          <div className="flex items-center justify-center bg-yellow-100 p-2 text-center text-amber-700">
+            <p className="font-bold">Demo</p>
+          </div>
+        )}
+        {isCurrent && (
+          <div className="flex items-center justify-center bg-blue-100 p-2 text-center text-blue-700">
+            <p className="font-bold">Currently displayed</p>
+          </div>
+        )}
+      </div>
       <CardHeader className="text-center">
         {timerData.name && (
           <CardTitle className="text-2xl font-bold text-balance">
@@ -176,7 +180,7 @@ export default function TimerCard({ timerData, isDemo }: TimerCardProps) {
 
       <CardContent className="space-y-6">
         {/* Countdown Display */}
-        {!isPunctualTimer && !isManualTimer && renderCountdown()}
+        {!isManualTimer && renderCountdown()}
 
         {timerData.durationMinutes !== null && timerData.durationMinutes > 0 && (
           <div className="flex items-center justify-center">

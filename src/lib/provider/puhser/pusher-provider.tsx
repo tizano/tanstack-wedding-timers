@@ -1,9 +1,9 @@
 import { env } from "@/env/client";
-import { getCurrentTimer } from "@/lib/actions/timer.action";
+import { getCurrentTimer, getTimerById } from "@/lib/actions/timer.action";
 import { QUERY_KEYS } from "@/lib/constant/constant";
 import { TimerAction } from "@/lib/db/schema";
 import { ACTION_UPDATED, CHANNEL, TIMER_UPDATED, logger } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import Pusher from "pusher-js";
@@ -18,6 +18,7 @@ interface PusherContextType {
     actionId: string;
     timerId: string;
     nextAction: TimerAction | null;
+    punctualTimer?: Awaited<ReturnType<typeof getTimerById>>;
   } | null;
   clearUpdatedAction: () => void;
 }
@@ -66,6 +67,8 @@ interface PusherProviderProps {
 export function PusherProvider({ children }: PusherProviderProps) {
   const router = useRouter();
   const location = useLocation();
+  const queryClient = useQueryClient();
+
   // useTimerPolling("wedding-event-1");
   const weddingParams = location.pathname.includes("demo")
     ? "wedding-event-demo"
@@ -76,9 +79,16 @@ export function PusherProvider({ children }: PusherProviderProps) {
     actionId: string;
     timerId: string;
     nextAction: TimerAction | null;
+    punctualTimer?: Awaited<ReturnType<typeof getTimerById>>;
   } | null>(null);
 
+  // State pour tracker les derniers updatedAt reçus
+  const [lastTimerUpdate, setLastTimerUpdate] = useState<string | null>(null);
+  const [lastActionUpdate, setLastActionUpdate] = useState<string | null>(null);
+
   const getCurrentTimerFn = useServerFn(getCurrentTimer);
+  const getTimerByIdFn = useServerFn(getTimerById);
+
   const {
     data: currentTimer,
     refetch: refetchCurrentTimer,
@@ -105,31 +115,88 @@ export function PusherProvider({ children }: PusherProviderProps) {
     const channel = pusher.subscribe(CHANNEL);
 
     // Créer une fonction unique pour ce composant
-    const handleTimerUpdate = (data: { id: string }) => {
+    const handleTimerUpdate = async (data: { id?: string; updatedAt?: string }) => {
       logger(`Timer updated via Pusher: ${JSON.stringify(data)}`);
       console.log("Je passe par le timer update");
 
+      // Vérifier si c'est une vraie mise à jour en comparant updatedAt
+      if (data.updatedAt) {
+        if (lastTimerUpdate === data.updatedAt) {
+          console.log(
+            "⏭️ Même updatedAt détecté pour timer, skip du refetch",
+            data.updatedAt,
+          );
+          return;
+        }
+        console.log(
+          "🔄 Nouveau updatedAt pour timer, refetch nécessaire:",
+          data.updatedAt,
+        );
+        setLastTimerUpdate(data.updatedAt);
+      }
+
       // Refetch timer data and invalidate router
-      refetchCurrentTimer();
+      await refetchCurrentTimer();
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.ALL_TIMERS, QUERY_KEYS.ACTION, QUERY_KEYS.TIMER],
+      });
       router.invalidate().catch((error) => {
         logger(`Router invalidation error: ${error.message || error.toString()}`);
       });
     };
 
     // Créer une fonction unique pour ce composant
-    const handleActionUpdate = (data: {
+    const handleActionUpdate = async (data: {
       actionId: string;
       timerId: string;
       nextAction: TimerAction | null;
+      updatedAt?: string;
     }) => {
       logger(`Action updated via Pusher: ${JSON.stringify(data)}`);
 
-      // Stocker l'action mise à jour dans le state
-      setUpdatedAction(data);
-      console.log("Je passe par l action update");
+      // Vérifier si c'est une vraie mise à jour en comparant updatedAt
+      if (data.updatedAt) {
+        if (lastActionUpdate === data.updatedAt) {
+          console.log(
+            "⏭️ Même updatedAt détecté pour action, skip du refetch",
+            data.updatedAt,
+          );
+          return;
+        }
+        console.log(
+          "🔄 Nouveau updatedAt pour action, refetch nécessaire:",
+          data.updatedAt,
+        );
+        setLastActionUpdate(data.updatedAt);
+      }
 
       // Refetch timer data and invalidate router
-      refetchCurrentTimer();
+      const result = await refetchCurrentTimer();
+      console.log("refetch data from action update in pusher --- ", result.data);
+
+      // Vérifier si l'action appartient à un timer différent du currentTimer
+      // (c'est le cas pour les timers ponctuels/manuels)
+      let punctualTimer = undefined;
+      if (result.data && data.timerId !== result.data.id) {
+        console.log(
+          `Action d'un timer différent détecté (${data.timerId} vs ${result.data.id}), récupération du timer...`,
+        );
+        const timerData = await getTimerByIdFn({ data: { id: data.timerId } });
+        if (timerData) {
+          punctualTimer = timerData;
+          console.log("Timer ponctuel récupéré:", timerData);
+        }
+      }
+
+      // Stocker l'action mise à jour dans le state avec le timer ponctuel si disponible
+      setUpdatedAction({
+        ...data,
+        punctualTimer,
+      });
+      console.log("Je passe par l action update");
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.ALL_TIMERS, QUERY_KEYS.ACTION, QUERY_KEYS.TIMER],
+      });
       router.invalidate().catch((error) => {
         logger(`Router invalidation error: ${error.message || error.toString()}`);
       });
@@ -147,7 +214,15 @@ export function PusherProvider({ children }: PusherProviderProps) {
       // Ne pas déconnecter Pusher car d'autres composants peuvent l'utiliser
       // La déconnexion se fera quand l'application se ferme
     };
-  }, [pusher, router, refetchCurrentTimer]);
+  }, [
+    pusher,
+    router,
+    refetchCurrentTimer,
+    getTimerByIdFn,
+    lastTimerUpdate,
+    lastActionUpdate,
+    queryClient,
+  ]);
 
   // Fonction pour réinitialiser updatedAction après traitement
   const clearUpdatedAction = () => {
