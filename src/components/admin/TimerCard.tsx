@@ -70,7 +70,7 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
 
   const timerNeedsToStart = isExpired && timerData.status === "PENDING";
   const timerIsStarted = isExpired && timerData.status === "RUNNING";
-  const timerIsCompleted = isExpired && timerData.status === "COMPLETED";
+  const timerIsCompleted = timerData.status === "COMPLETED";
 
   // Timer actions pulse effect when it needs to start
   // to draw attention to the admin
