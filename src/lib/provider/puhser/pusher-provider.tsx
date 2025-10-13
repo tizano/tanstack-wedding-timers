@@ -136,9 +136,15 @@ export function PusherProvider({ children }: PusherProviderProps) {
       }
 
       // Refetch timer data and invalidate router
-      await refetchCurrentTimer();
+      // await refetchCurrentTimer();
       queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.ALL_TIMERS, QUERY_KEYS.ACTION, QUERY_KEYS.TIMER],
+        queryKey: [QUERY_KEYS.ACTION],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TIMER],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.ALL_TIMERS],
       });
       router.invalidate().catch((error) => {
         logger(`Router invalidation error: ${error.message || error.toString()}`);
@@ -195,7 +201,13 @@ export function PusherProvider({ children }: PusherProviderProps) {
       });
       console.log("Je passe par l action update");
       queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.ALL_TIMERS, QUERY_KEYS.ACTION, QUERY_KEYS.TIMER],
+        queryKey: [QUERY_KEYS.ACTION],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TIMER],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.ALL_TIMERS],
       });
       router.invalidate().catch((error) => {
         logger(`Router invalidation error: ${error.message || error.toString()}`);

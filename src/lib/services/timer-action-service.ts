@@ -177,6 +177,15 @@ export class TimerActionService {
     logger("[completeAction] Next action from service -- ");
     console.log(nextAction);
 
+    // Récupérer toutes les actions restantes non exécutées pour ce timer
+    const remainingActions = await db.query.timerAction.findMany({
+      where: and(eq(timerAction.timerId, action.timerId), isNull(timerAction.executedAt)),
+      orderBy: [asc(timerAction.orderIndex)],
+    });
+
+    logger("[completeAction] Remaining actions from service -- ");
+    console.log(remainingActions);
+
     // Pas besoin de restaurer le timer précédent car les actions ponctuelles
     // sont affichées en overlay dans le frontend
 
@@ -188,7 +197,11 @@ export class TimerActionService {
       nextAction: nextAction ? nextAction.action : null,
     });
 
-    return { action, completedAt: formatTimezoneAgnosticDate(now) };
+    return {
+      action,
+      completedAt: formatTimezoneAgnosticDate(now),
+      remainingActions,
+    };
   }
 
   /**

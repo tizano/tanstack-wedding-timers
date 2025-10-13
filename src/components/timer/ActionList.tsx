@@ -4,24 +4,25 @@ import { MUTATION_KEYS, QUERY_KEYS } from "@/lib/constant/constant";
 import type { TimerAction } from "@/lib/db/schema/timer.schema";
 import { cn, logger } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 import { toast } from "sonner";
 import ActionItem from "./ActionItem";
 
 type ActionListProps = {
   actions: TimerAction[];
   currentAction: TimerAction | null;
-  isDemo?: boolean;
   display: "list" | "grid";
+  shouldPulse?: boolean;
 };
 
 export default function ActionList({
   actions,
-  isDemo,
+  currentAction: currentActionFromProps,
   display = "list",
+  shouldPulse = false,
 }: ActionListProps) {
-  const [currentAction, setCurrentAction] = useState<TimerAction | null>(null);
   const queryClient = useQueryClient();
+
+  console.log("[ActionList] currentAction from props:", currentActionFromProps);
 
   const { mutate: mutateTimerStartDate } = useMutation({
     mutationKey: [MUTATION_KEYS.START_ACTION],
@@ -37,17 +38,17 @@ export default function ActionList({
 
   const { mutate: mutateStartAction } = useMutation({
     mutationKey: [MUTATION_KEYS.START_ACTION],
-    mutationFn: async () => {
+    mutationFn: async (actionId: string) => {
       logger("Starting action from TimerCard:");
 
-      console.log(currentAction?.id);
-      if (!currentAction?.id) {
-        throw new Error("No current action to start");
+      console.log("Starting action ID:", actionId);
+      if (!actionId) {
+        throw new Error("No action ID to start");
       }
 
       return await startAction({
         data: {
-          actionId: currentAction.id,
+          actionId,
         },
       });
     },
@@ -55,6 +56,7 @@ export default function ActionList({
       // Optionally refetch or update the timer data after mutation
       mutateTimerStartDate(action.timerId);
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ALL_TIMERS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TIMER] });
       toast.success("Timer action triggered successfully!");
     },
     onError: (error) => {
@@ -65,8 +67,7 @@ export default function ActionList({
   if (!actions.length) return null;
 
   const handleStartAction = (action: TimerAction) => {
-    setCurrentAction(action);
-    mutateStartAction();
+    mutateStartAction(action.id);
   };
 
   return (
@@ -82,9 +83,9 @@ export default function ActionList({
           <ActionItem
             key={action.id}
             action={action}
-            isDemo={isDemo}
             onActionStart={(action) => handleStartAction(action)}
-            currentAction={currentAction}
+            currentAction={currentActionFromProps}
+            shouldPulse={shouldPulse}
           />
         ))}
       </div>

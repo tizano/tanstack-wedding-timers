@@ -30,6 +30,9 @@ type TimerCardProps = {
 export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardProps) {
   const navigate = useNavigate();
 
+  // Log pour debug : vérifier que timerData.actions est mis à jour
+  console.log(`[TimerCard] ${timerData.name} - actions:`, timerData.actions);
+
   const { timeLeft, isExpired, currentAction } = useTimerWithPusher({
     timer: timerData,
     startTime: timerData.scheduledStartTime,
@@ -95,8 +98,9 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
     if (timerNeedsToStart) {
       return (
         <div className="text-center">
-          <div className="text-primary text-2xl font-bold">Ready to start!</div>
-          <TimerCountdown timeLeft={timeLeft} />
+          <div className="text-primary text-2xl font-bold">
+            {isPunctualTimer ? "Event time reached!" : "Ready to start!"}
+          </div>
         </div>
       );
     }
@@ -151,7 +155,7 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
         {timerData.scheduledStartTime && (
           <div className="text-muted-foreground flex items-center justify-center gap-2">
             <Calendar className="h-4 w-4" />
-            <span className="text-sm">
+            <span className="text-sm font-bold">
               {formatTimezoneAgnosticDate(timerData.scheduledStartTime, {
                 dateStyle: "short",
                 timeStyle: "short",
@@ -194,9 +198,9 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
         {/* Actions */}
         <ActionList
           actions={timerData.actions}
-          isDemo={isDemo}
           currentAction={currentAction}
           display="list"
+          shouldPulse={timerIsStarted || timerNeedsToStart}
         />
       </CardContent>
       <CardFooter className="flex-1 items-end">

@@ -18,18 +18,12 @@ const TimerDisplay = ({
   isDemo = false,
   variant = "large",
 }: TimerDisplayProps) => {
-  const {
-    timeLeft,
-    currentAction,
-    nextAction,
-    shouldNotifyAction,
-    isExpired,
-    isRunning,
-  } = useTimerWithPusher({
-    timer: timerData,
-    startTime: timerData.scheduledStartTime,
-    durationMinutes: timerData.durationMinutes ?? 0,
-  });
+  const { timeLeft, currentAction, shouldNotifyAction, isExpired, isRunning } =
+    useTimerWithPusher({
+      timer: timerData,
+      startTime: timerData.scheduledStartTime,
+      durationMinutes: timerData.durationMinutes ?? 0,
+    });
 
   // Récupérer les données du PusherProvider pour détecter les actions ponctuelles
   const { updatedAction } = usePusher();
@@ -97,7 +91,6 @@ const TimerDisplay = ({
             )}
             <ActionDisplay
               currentAction={currentAction}
-              nextAction={nextAction}
               timeLeft={timeLeft}
               onActionComplete={() => {
                 /* Optionally handle action completion at the TimerDisplay level */
@@ -115,7 +108,6 @@ const TimerDisplay = ({
             )}
             <ActionDisplay
               currentAction={punctualAction}
-              nextAction={null}
               timeLeft={timeLeft}
               onActionComplete={() => {
                 console.log("[TimerDisplay] Action ponctuelle terminée");

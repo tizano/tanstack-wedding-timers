@@ -7,18 +7,28 @@ import { Button } from "../ui/button";
 
 type ActionItemProps = {
   action: TimerAction;
-  isDemo?: boolean;
   onActionStart?: (action: TimerAction) => void;
   currentAction?: TimerAction | null;
+  shouldPulse?: boolean;
 };
 
 const ActionItem = ({
   action,
   onActionStart,
-  isDemo,
   currentAction,
+  shouldPulse = false,
 }: ActionItemProps) => {
-  const isCurrent = currentAction?.id === action.id;
+  const isCurrentAction = currentAction?.id === action.id;
+
+  // Log pour debug
+  if (action.status === "RUNNING" || isCurrentAction) {
+    console.log(`[ActionItem] ${action.contentEn}:`, {
+      actionId: action.id,
+      status: action.status,
+      currentActionId: currentAction?.id,
+      isCurrentAction,
+    });
+  }
 
   const renderActionIcon = (action: TimerAction) => {
     switch (action.type) {
@@ -72,18 +82,28 @@ const ActionItem = ({
     return <span>Trigger manually</span>;
   };
 
-  const getActionStatus = (action: TimerAction, isCurrent: boolean): TimerStatus => {
-    if (isCurrent) {
-      return action.executedAt ? "RUNNING" : "NOT_EXECUTED";
+  const getActionStatus = (action: TimerAction): TimerStatus => {
+    // Utiliser directement le statut de l'action depuis la base de données
+    if (action.status === "COMPLETED") {
+      return "COMPLETED";
     }
-    return action.executedAt ? "COMPLETED" : "NOT_EXECUTED";
+    if (action.status === "RUNNING") {
+      return "RUNNING";
+    }
+    // Si l'action est PENDING mais a été exécutée, c'est une incohérence
+    // On se base sur executedAt pour les cas edge
+    if (action.executedAt) {
+      return "COMPLETED";
+    }
+    return "NOT_EXECUTED";
   };
 
   return (
     <div
       className={cn(
         "bg-muted/70 flex gap-3 rounded-lg border p-3",
-        isCurrent && "border-green-500 bg-green-50 dark:bg-green-950",
+        isCurrentAction && "border-green-500 bg-green-200/50 dark:bg-green-950",
+        shouldPulse && "animate-pulse bg-orange-200/50 dark:bg-orange-950",
       )}
     >
       <div className="mt-1">{renderActionIcon(action)}</div>
@@ -108,15 +128,12 @@ const ActionItem = ({
           className="mt-2"
           size="sm"
           onClick={() => {
-            console.log(`Manually triggering action ${action.id}`);
-            console.log(action);
-
             onActionStart?.(action);
           }}
         >
           Start Action
         </Button>
-        <StatusBadge status={getActionStatus(action, isCurrent)} />
+        <StatusBadge status={getActionStatus(action)} />
       </div>
     </div>
   );

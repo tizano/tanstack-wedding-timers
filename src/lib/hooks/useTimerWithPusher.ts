@@ -1,6 +1,7 @@
 /* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
-import { Timer, TimerAction } from "@/lib/db/schema/timer.schema";
+import { TimerAction } from "@/lib/db/schema/timer.schema";
 import { usePusher } from "@/lib/provider/puhser/pusher-provider";
+import { TimerWithActions } from "@/lib/types/timer.type";
 import { getTimezoneAgnosticTimeDiff } from "@/lib/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -13,7 +14,7 @@ export interface TimeLeft {
 }
 
 interface UseTimerWithPusherOptions {
-  timer: Timer;
+  timer: TimerWithActions;
   startTime: Date | string | null;
   durationMinutes: number;
   onExpire?: () => void;
@@ -81,7 +82,8 @@ export function useTimerWithPusher({
   // Récupérer les données à jour depuis le PusherProvider
   const { currentTimer, updatedAction } = usePusher();
 
-  // Utiliser les actions depuis currentTimer si c'est le bon timer, sinon array vide
+  // Utiliser les actions depuis currentTimer si c'est le bon timer
+  // Sinon, utiliser les actions du timer passé en prop (pour le dashboard admin)
   const actions = useMemo(() => {
     if (currentTimer && currentTimer.id === timer.id) {
       if (displayLog) {
@@ -92,8 +94,15 @@ export function useTimerWithPusher({
       }
       return currentTimer.actions;
     }
+    // Pour les timers non-courants (dashboard admin), utiliser les actions du timer
+    if ("actions" in timer && timer.actions && Array.isArray(timer.actions)) {
+      if (displayLog) {
+        console.log("📦 Utilisation des actions depuis le timer prop:", timer.actions);
+      }
+      return timer.actions;
+    }
     return [];
-  }, [currentTimer, timer.id, displayLog]);
+  }, [currentTimer, timer, displayLog]);
 
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
@@ -120,7 +129,7 @@ export function useTimerWithPusher({
   }, [onExpire, onActionTrigger]);
 
   const calculateState = useCallback(() => {
-    if (!startTime || durationMinutes === 0) {
+    if (!startTime) {
       setTimeLeft({
         days: 0,
         hours: 0,
@@ -138,9 +147,13 @@ export function useTimerWithPusher({
 
     const now = new Date();
     const start = typeof startTime === "string" ? new Date(startTime) : startTime;
-    const endTime = new Date(start.getTime() + durationMinutes * 60000);
 
-    const difference = getTimezoneAgnosticTimeDiff(endTime);
+    // Pour les timers ponctuels (duration = 0), on calcule le temps jusqu'au startTime
+    // Pour les timers normaux, on calcule le temps jusqu'au endTime
+    const targetTime =
+      durationMinutes === 0 ? start : new Date(start.getTime() + durationMinutes * 60000);
+
+    const difference = getTimezoneAgnosticTimeDiff(targetTime);
 
     if (difference <= 0) {
       setTimeLeft({
@@ -242,10 +255,10 @@ export function useTimerWithPusher({
     triggeredActionsRef.current.clear();
 
     const completedActionIds = actions
-      .filter((a) => a.status === "COMPLETED")
-      .map((a) => a.id);
+      .filter((a: TimerAction) => a.status === "COMPLETED")
+      .map((a: TimerAction) => a.id);
 
-    completedActionIds.forEach((id) => {
+    completedActionIds.forEach((id: string) => {
       completingActionsRef.current.delete(id);
     });
 

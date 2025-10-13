@@ -13,7 +13,6 @@ import TimerCountdown from "./TimerCountdown";
 interface ActionDisplayProps {
   currentAction: TimerAction;
   timeLeft: TimeLeft;
-  nextAction?: TimerAction | null;
   onActionComplete?: () => void;
 }
 
@@ -31,11 +30,11 @@ interface ActionDisplayProps {
 const ActionDisplay = ({
   currentAction,
   timeLeft,
-  nextAction,
   onActionComplete,
 }: ActionDisplayProps) => {
   const [showMediaContent, setShowMediaContent] = useState(true);
   const [showTextContent, setShowTextContent] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [textContentTimer, setTextContentTimer] = useState<number | null>(null);
 
   const queryClient = useQueryClient();
@@ -92,6 +91,7 @@ const ActionDisplay = ({
         mutateStartTimer(nextTimerId);
       }
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ALL_TIMERS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TIMER] });
     },
     onError: (error) => {
       console.error("Error completing timer:", error);
@@ -108,30 +108,44 @@ const ActionDisplay = ({
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: ({ action, remainingActions }) => {
       console.log(
         "[ActionDisplay][mutateCompleteAction] Action completed successfully",
         currentAction,
       );
-      console.log("[ActionDisplay][mutateCompleteAction] Next action", nextAction);
+      console.log(
+        "[ActionDisplay][mutateCompleteAction] Remaining actions:",
+        remainingActions,
+      );
 
-      // Vérifier si la prochaine action doit être déclenchée automatiquement
-      if (nextAction && nextAction.triggerOffsetMinutes === 0) {
-        console.log(
-          `[ActionDisplay] Déclenchement automatique de l'action suivante: ${nextAction.id}`,
+      // Invalider les queries pour mettre à jour l'état
+
+      // Si l'API retourne des actions restantes, vérifier s'il faut en déclencher une automatiquement
+      if (remainingActions && remainingActions.length > 0) {
+        // Trouver la prochaine action non exécutée avec triggerOffsetMinutes === 0
+        const nextAutoAction = remainingActions.find(
+          (a) => a.triggerOffsetMinutes === 0 && !a.executedAt && a.status === "PENDING",
         );
-        console.log(nextAction);
 
-        mutateStartAction(nextAction.id);
+        if (nextAutoAction) {
+          console.log(
+            `[ActionDisplay] Déclenchement automatique de l'action suivante: ${nextAutoAction.id}`,
+          );
+          mutateStartAction(nextAutoAction.id);
+        } else {
+          console.log(
+            "[ActionDisplay] Aucune action suivante ne doit être déclenchée automatiquement.",
+          );
+        }
       } else {
-        // Si pas d'action suivante, on complete le timer
+        // Plus d'actions restantes, compléter le timer
         console.log(
-          "[ActionDisplay] Aucune action suivante à déclencher automatiquement.",
+          "[ActionDisplay] Toutes les actions sont terminées, completion du timer.",
         );
-        mutateCompleteTimer(currentAction.timerId);
+        mutateCompleteTimer(action.timerId);
       }
-
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ALL_TIMERS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TIMER] });
     },
     onError: (error) => {
       console.error("Error completing action:", error);
