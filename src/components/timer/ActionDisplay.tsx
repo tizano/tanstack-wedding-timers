@@ -207,7 +207,7 @@ const ActionDisplay = ({
   });
 
   // Déterminer si on doit afficher le timer en petit (offset négatif)
-  const shouldShowMiniTimer = currentAction.type !== "SOUND";
+  const shouldShowMiniTimer = currentAction.type !== "SOUND" && timeLeft.totalSeconds > 0;
 
   /**
    * Appelé quand le média est terminé (vidéo/audio/image finie)
