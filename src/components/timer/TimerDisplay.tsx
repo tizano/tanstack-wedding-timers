@@ -1,8 +1,11 @@
+import { completeTimer, startTimer } from "@/lib/actions/timer.action";
+import { MUTATION_KEYS, QUERY_KEYS } from "@/lib/constant/constant";
 import { useTimerWithPusher } from "@/lib/hooks/useTimerWithPusher";
 import { usePusher } from "@/lib/provider/puhser/pusher-provider";
 import { TimerWithActions } from "@/lib/types/timer.type";
 import { cn } from "@/lib/utils";
-import { useMemo } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Badge } from "../ui/badge";
 import ActionDisplay from "./ActionDisplay";
 import ContentAction from "./actions/ContentAction";
@@ -19,6 +22,73 @@ const TimerDisplay = ({
   isDemo = false,
   variant = "large",
 }: TimerDisplayProps) => {
+  const queryClient = useQueryClient();
+  const hasAutoCompletedRef = useRef(false);
+
+  const { mutate: mutateStartTimer } = useMutation({
+    mutationKey: [MUTATION_KEYS.START_TIMER],
+    mutationFn: async (timerId: string) => {
+      return await startTimer({
+        data: {
+          timerId,
+        },
+      });
+    },
+    onSuccess: () => {
+      console.log("[TimerDisplay] Next timer started automatically");
+    },
+    onError: (error) => {
+      console.error("[TimerDisplay] Error starting next timer:", error);
+    },
+  });
+
+  const { mutate: mutateCompleteTimer } = useMutation({
+    mutationKey: [MUTATION_KEYS.UPDATE_TIMER],
+    mutationFn: async (timerId: string) => {
+      return await completeTimer({
+        data: {
+          timerId,
+        },
+      });
+    },
+    onSuccess: ({ nextTimerId }) => {
+      console.log("[TimerDisplay] Timer completed successfully on expiration");
+      if (nextTimerId) {
+        console.log(`[TimerDisplay] Next timer to start automatically: ${nextTimerId}`);
+        mutateStartTimer(nextTimerId);
+      }
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ALL_TIMERS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TIMER] });
+    },
+    onError: (error) => {
+      console.error("[TimerDisplay] Error completing timer:", error);
+    },
+  });
+
+  const handleTimerExpire = useCallback(() => {
+    console.log("[TimerDisplay] Timer expired:", timerData.name);
+
+    // Vérifier si le timer est toujours en cours et si toutes les actions sont terminées
+    if (timerData.status === "RUNNING" && !hasAutoCompletedRef.current) {
+      const allActionsCompleted =
+        !timerData.actions ||
+        timerData.actions.length === 0 ||
+        timerData.actions.every((action) => action.status === "COMPLETED");
+
+      if (allActionsCompleted) {
+        console.log(
+          "[TimerDisplay] Toutes les actions sont terminées, auto-completion du timer",
+        );
+        hasAutoCompletedRef.current = true;
+        mutateCompleteTimer(timerData.id);
+      } else {
+        console.log(
+          "[TimerDisplay] Des actions sont encore en cours, le timer ne sera pas complété automatiquement",
+        );
+      }
+    }
+  }, [timerData, mutateCompleteTimer]);
+
   const {
     timeLeft,
     currentAction,
@@ -30,10 +100,18 @@ const TimerDisplay = ({
     timer: timerData,
     startTime: timerData.scheduledStartTime,
     durationMinutes: timerData.durationMinutes ?? 0,
+    onExpire: handleTimerExpire,
   });
 
   // Récupérer les données du PusherProvider pour détecter les actions ponctuelles
   const { updatedAction } = usePusher();
+
+  // Réinitialiser le flag de complétion automatique quand le timer change
+  useEffect(() => {
+    if (timerData.status !== "COMPLETED") {
+      hasAutoCompletedRef.current = false;
+    }
+  }, [timerData.id, timerData.status]);
 
   // Détecter si une action ponctuelle d'un autre timer doit être affichée
   const punctualAction = useMemo(() => {

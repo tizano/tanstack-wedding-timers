@@ -288,16 +288,13 @@ export function useTimerWithPusher({
     return () => clearInterval(interval);
   }, [calculateState, updateInterval]);
 
-  const markActionAsCompleting = useCallback(
-    (actionId: string) => {
-      if (displayLog) {
-        console.log(`🔒 Marquage de l'action ${actionId} comme en cours de complétion`);
-      }
-      completingActionsRef.current.add(actionId);
-      calculateState();
-    },
-    [calculateState, displayLog],
-  );
+  const markActionAsCompleting = useCallback((actionId: string) => {
+    console.log(`🔒 Marquage de l'action ${actionId} comme en cours de complétion`);
+    completingActionsRef.current.add(actionId);
+    // NE PAS recalculer immédiatement pour éviter le glitch
+    // Laisser Pusher déclencher le recalcul avec les données à jour
+    // calculateState();
+  }, []);
 
   return {
     timeLeft,

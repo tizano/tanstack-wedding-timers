@@ -22,8 +22,6 @@ export default function ActionList({
 }: ActionListProps) {
   const queryClient = useQueryClient();
 
-  console.log("[ActionList] currentAction from props:", currentActionFromProps);
-
   const { mutate: mutateTimerStartDate } = useMutation({
     mutationKey: [MUTATION_KEYS.START_ACTION],
     mutationFn: async (timerId: string) => {

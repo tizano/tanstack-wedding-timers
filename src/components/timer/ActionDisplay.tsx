@@ -141,9 +141,21 @@ const ActionDisplay = ({
 
       // Si l'API retourne des actions restantes, vérifier s'il faut en déclencher une automatiquement
       if (remainingActions && remainingActions.length > 0) {
+        console.log(
+          "[ActionDisplay] remainingActions:",
+          remainingActions.map((a) => ({
+            id: a.id,
+            title: a.title,
+            triggerOffsetMinutes: a.triggerOffsetMinutes,
+            executedAt: a.executedAt,
+            status: a.status,
+          })),
+        );
+
         // Trouver la prochaine action non exécutée avec triggerOffsetMinutes === 0
+        // On ne vérifie PAS le status car il peut ne pas encore être à jour
         const nextAutoAction = remainingActions.find(
-          (a) => a.triggerOffsetMinutes === 0 && !a.executedAt && a.status === "PENDING",
+          (a) => a.triggerOffsetMinutes === 0 && !a.executedAt,
         );
 
         if (nextAutoAction) {
@@ -155,13 +167,34 @@ const ActionDisplay = ({
           console.log(
             "[ActionDisplay] Aucune action suivante ne doit être déclenchée automatiquement.",
           );
+          console.log(
+            "[ActionDisplay] Actions avec offset=0:",
+            remainingActions.filter((a) => a.triggerOffsetMinutes === 0),
+          );
         }
       } else {
-        // Plus d'actions restantes, compléter le timer
+        // Plus d'actions restantes
         console.log(
-          "[ActionDisplay] Toutes les actions sont terminées, completion du timer.",
+          "[ActionDisplay] Toutes les actions sont terminées, vérification si on doit attendre.",
         );
-        mutateCompleteTimer(action.timerId);
+
+        // Vérifier si l'action complétée avait un triggerOffset négatif
+        // Si oui, attendre que le temps soit écoulé avant de compléter le timer
+        const hadNegativeTriggerOffset =
+          action.triggerOffsetMinutes !== null &&
+          action.triggerOffsetMinutes !== undefined &&
+          action.triggerOffsetMinutes < 0;
+
+        if (hadNegativeTriggerOffset && timeLeft.totalSeconds > 0) {
+          console.log(
+            `[ActionDisplay] L'action avait un triggerOffset négatif et il reste ${timeLeft.totalSeconds} secondes, le timer ne sera pas complété maintenant.`,
+          );
+        } else {
+          console.log(
+            "[ActionDisplay] Completion du timer (pas de triggerOffset négatif ou temps écoulé).",
+          );
+          mutateCompleteTimer(action.timerId);
+        }
       }
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ALL_TIMERS] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TIMER] });
@@ -174,7 +207,7 @@ const ActionDisplay = ({
   });
 
   // Déterminer si on doit afficher le timer en petit (offset négatif)
-  const shouldShowMiniTimer = currentAction.triggerOffsetMinutes < 0;
+  const shouldShowMiniTimer = currentAction.type !== "SOUND";
 
   /**
    * Appelé quand le média est terminé (vidéo/audio/image finie)
@@ -251,14 +284,15 @@ const ActionDisplay = ({
       >
         <div className={cn(currentAction.type === "VIDEO" && "max-w-screen")}>
           {/* Mini timer si offset négatif (action avant la fin) */}
-          {shouldShowMiniTimer && showMediaContent && (
-            <div className="mt-6 rounded-lg bg-black/50 p-4 text-gray-100 backdrop-blur-md">
-              <TimerCountdown timeLeft={timeLeft} variant="small" />
-            </div>
-          )}
+
           {/* Contenu média (vidéo/image/son/galerie) */}
           {showMediaContent && (
-            <div className="absolute inset-0 flex h-screen w-screen items-center justify-center">
+            <div className="absolute inset-0 flex h-screen w-screen flex-col items-center justify-center gap-12">
+              {shouldShowMiniTimer && (
+                <div className="text-gray-100">
+                  <TimerCountdown timeLeft={timeLeft} variant="large" />
+                </div>
+              )}
               {renderMediaContent()}
             </div>
           )}

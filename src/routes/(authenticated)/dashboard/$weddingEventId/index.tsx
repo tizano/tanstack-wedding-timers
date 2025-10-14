@@ -24,9 +24,6 @@ function RouteComponent() {
     timersQueryOptions(weddingEventId),
   );
 
-  // Log pour debug : vérifier que les actions sont bien mises à jour
-  console.log("[RouteComponent] timersWithActions updated:", timersWithActions);
-
   if (isLoading) {
     return <div>Loading...</div>;
   }

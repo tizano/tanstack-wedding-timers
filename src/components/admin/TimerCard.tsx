@@ -72,10 +72,63 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
   const timerIsStarted = isExpired && timerData.status === "RUNNING";
   const timerIsCompleted = timerData.status === "COMPLETED";
 
+  // Calculer si une action devrait déclencher le pulse
+  // en fonction du triggerOffsetMinutes et du temps restant
+  // On vérifie toutes les actions non complétées dans timerData.actions
+  const shouldPulseForAction = (() => {
+    if (timerIsCompleted || !timerData.actions || timerData.actions.length === 0) {
+      return false;
+    }
+
+    // Vérifier toutes les actions non complétées
+    return timerData.actions.some((action) => {
+      // Ignorer les actions déjà complétées
+      if (action.status === "COMPLETED") return false;
+
+      const triggerOffset = action.triggerOffsetMinutes;
+
+      // Si pas de trigger offset, ne pas activer le pulse pour cette action
+      if (triggerOffset === null || triggerOffset === undefined) {
+        return false;
+      }
+
+      // Si trigger offset négatif (ex: -5 pour 5 min avant la fin)
+      if (triggerOffset < 0) {
+        const secondsUntilTrigger = Math.abs(triggerOffset) * 60;
+        const totalSecondsLeft = timeLeft.totalSeconds;
+
+        // Activer le pulse quand on atteint ou dépasse le moment du trigger
+        // Comparer en secondes pour une précision exacte
+        return totalSecondsLeft <= secondsUntilTrigger && timerData.status === "RUNNING";
+      }
+
+      // Si trigger offset positif (ex: 5 pour 5 min après le début)
+      if (triggerOffset > 0) {
+        // Calculer le temps écoulé depuis le début du timer
+        if (!timerData.scheduledStartTime) return false;
+
+        const now = new Date();
+        const startTime =
+          typeof timerData.scheduledStartTime === "string"
+            ? new Date(timerData.scheduledStartTime)
+            : timerData.scheduledStartTime;
+
+        const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000);
+
+        // Activer le pulse quand on a atteint ou dépassé le trigger
+        return elapsedMinutes >= triggerOffset && timerData.status === "RUNNING";
+      }
+
+      return false;
+    });
+  })();
+
   // Timer actions pulse effect when it needs to start
   // to draw attention to the admin
   // when the timer is pending and the scheduled start time has passed
-  const pulseClassName = timerNeedsToStart ? " animate-pulse bg-[#A5D6A7]" : "";
+  // OR when any action's trigger time is reached
+  const pulseClassName =
+    timerNeedsToStart || shouldPulseForAction ? " animate-pulse bg-[#A5D6A7]" : "";
 
   const shouldShowCountdown = !isManualTimer;
 
@@ -96,6 +149,9 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
       return (
         <div className="text-center">
           <div className="text-primary text-2xl font-bold">Event Started !</div>
+          <p>
+            <em>Press "Start Action"</em>
+          </p>
         </div>
       );
     }
@@ -192,11 +248,10 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
 
         {timerData.durationMinutes !== null &&
           timerData.durationMinutes > 0 &&
-          !isCurrent && (
+          !isCurrent &&
+          !timerIsCompleted && (
             <div className="flex items-center justify-center">
-              <Button disabled={timerIsCompleted} onClick={() => mutateDisplayTimer()}>
-                Display this timer
-              </Button>
+              <Button onClick={() => mutateDisplayTimer()}>Display this timer</Button>
             </div>
           )}
 
@@ -208,7 +263,7 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
           actions={timerData.actions}
           currentAction={currentAction}
           display="list"
-          shouldPulse={timerIsStarted || timerNeedsToStart}
+          shouldPulse={timerIsStarted || timerNeedsToStart || shouldPulseForAction}
         />
       </CardContent>
       <CardFooter className="flex-1 items-end">

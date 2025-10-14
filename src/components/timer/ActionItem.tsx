@@ -122,16 +122,19 @@ const ActionItem = ({
         </div>
       </div>
       <div className="flex flex-col gap-2">
-        <Button
-          variant="outline"
-          className="mt-2"
-          size="sm"
-          onClick={() => {
-            onActionStart?.(action);
-          }}
-        >
-          Start Action
-        </Button>
+        {action.status !== "COMPLETED" && (
+          <Button
+            variant="outline"
+            className="mt-2"
+            size="sm"
+            onClick={() => {
+              onActionStart?.(action);
+            }}
+          >
+            Start Action
+          </Button>
+        )}
+
         <StatusBadge status={getActionStatus(action)} />
       </div>
     </div>
