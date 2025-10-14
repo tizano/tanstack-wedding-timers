@@ -15,6 +15,7 @@ import { cn, formatTimezoneAgnosticDate } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Calendar, Clock } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import ActionList from "../timer/ActionList";
 import TimerCountdown from "../timer/TimerCountdown";
@@ -29,6 +30,8 @@ type TimerCardProps = {
 
 export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardProps) {
   const navigate = useNavigate();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const previousPulseState = useRef<boolean>(false);
 
   const { timeLeft, isExpired, currentAction } = useTimerWithPusher({
     timer: timerData,
@@ -127,8 +130,24 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
   // to draw attention to the admin
   // when the timer is pending and the scheduled start time has passed
   // OR when any action's trigger time is reached
-  const pulseClassName =
-    timerNeedsToStart || shouldPulseForAction ? " animate-pulse bg-[#A5D6A7]" : "";
+  const shouldPulse = timerNeedsToStart || shouldPulseForAction;
+  const pulseClassName = shouldPulse ? " animate-pulse bg-[#A5D6A7]" : "";
+
+  // Scroll to card when it starts pulsing (only once when transitioning from false to true)
+  useEffect(() => {
+    // Détecte la transition de "non-pulse" à "pulse"
+    const justStartedPulsing = shouldPulse && !previousPulseState.current;
+
+    if (justStartedPulsing && cardRef.current) {
+      cardRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+
+    // Met à jour l'état précédent
+    previousPulseState.current = shouldPulse;
+  }, [shouldPulse]);
 
   const shouldShowCountdown = !isManualTimer;
 
@@ -242,7 +261,7 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
         )}
       </CardHeader>
 
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6" ref={cardRef}>
         {/* Countdown Display */}
         {!isManualTimer && renderCountdown()}
 
