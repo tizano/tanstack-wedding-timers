@@ -136,8 +136,12 @@ export class TimerService {
     }
     console.log("Initial now to updatedAt:", currentScheduledTime);
 
+    // Durée custom pour le mode démo en minutes (tous les timers avec durée durent 20min en mode démo)
+    const customDemoDuration = 10;
+
     for (let i = 0; i < allTimers.length; i++) {
       const currentTimer = allTimers[i];
+      const nextTimer = i < allTimers.length - 1 ? allTimers[i + 1] : null;
       let newScheduledTime: Date | null = null;
 
       // Déterminer le type de timer
@@ -152,18 +156,39 @@ export class TimerService {
         newScheduledTime = null;
         // Le currentScheduledTime ne change pas pour les timers suivants
       } else if (hasNoDuration) {
-        // Timer ponctuel : utiliser le now actuel (moment où le bouton est cliqué)
-        // mais conserver la structure (avoir un scheduledStartTime) comme dans wedding-event-1
-        newScheduledTime = currentScheduledTime;
-        // Le currentScheduledTime ne change pas pour les timers suivants
+        // Timer ponctuel : commence à la moitié de la durée du timer SUIVANT
+        // Si le timer suivant a une durée de customDemoDuration, le ponctuel commence à customDemoDuration/2 avant la fin
+        if (nextTimer && nextTimer.durationMinutes && nextTimer.durationMinutes > 0) {
+          // Le timer suivant a une durée, le ponctuel se déclenche au milieu de sa durée
+          // On doit d'abord calculer le scheduledStartTime du timer suivant
+          // Le timer suivant commence à currentScheduledTime
+          const nextTimerStartTime = currentScheduledTime;
+
+          if (nextTimerStartTime) {
+            // Le ponctuel commence au milieu du timer suivant
+            const punctualOffset = customDemoDuration / 2;
+            newScheduledTime = new Date(
+              nextTimerStartTime.getTime() + punctualOffset * 60000,
+            );
+          } else {
+            // Fallback : utiliser le currentScheduledTime
+            newScheduledTime = currentScheduledTime;
+          }
+        } else {
+          // Pas de timer suivant avec durée, utiliser le currentScheduledTime
+          newScheduledTime = currentScheduledTime;
+        }
+        // Le currentScheduledTime ne change pas pour les timers ponctuels
       } else if (hasDuration) {
         // Timer avec durée : utiliser le currentScheduledTime calculé
+        console.log(currentScheduledTime);
+
         newScheduledTime = currentScheduledTime;
 
-        // Calculer le scheduledStartTime du prochain timer en ajoutant la durée
-        if (currentScheduledTime && currentTimer.durationMinutes) {
+        // Calculer le scheduledStartTime du prochain timer avec durée en ajoutant la durée + l'espacement
+        if (currentScheduledTime) {
           currentScheduledTime = new Date(
-            currentScheduledTime.getTime() + currentTimer.durationMinutes * 60000,
+            currentScheduledTime.getTime() + customDemoDuration * 60000,
           );
         }
       }
@@ -173,6 +198,7 @@ export class TimerService {
         .update(timer)
         .set({
           scheduledStartTime: newScheduledTime,
+          durationMinutes: hasDuration ? customDemoDuration : 0, // Forcer la durée custom pour les timers avec durée
           updatedAt: now,
         })
         .where(eq(timer.id, currentTimer.id));

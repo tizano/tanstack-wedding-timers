@@ -193,7 +193,7 @@ async function seedWeddingData() {
     {
       id: "timer-2",
       orderIndex: 1,
-      name: "Sound - Landing of the bride and groom",
+      name: "Announcement before landing of the bride and the groom",
       scheduledStartTime: new Date("2025-10-25T16:20:00.000Z"),
       status: "PENDING" as const,
       weddingEventId: realWeddingEvent[0]?.id,
@@ -217,7 +217,7 @@ async function seedWeddingData() {
     },
     {
       id: "timer-4",
-      orderIndex: 4,
+      orderIndex: 5,
       name: "Sound - Speech of best men and maids of honour",
       scheduledStartTime: new Date("2025-10-25T17:05:00.000Z"),
       durationMinutes: 40,
@@ -230,7 +230,7 @@ async function seedWeddingData() {
     },
     {
       id: "timer-5",
-      orderIndex: 5,
+      orderIndex: 4,
       name: "Activity - Phone",
       scheduledStartTime: new Date("2025-10-25T17:30:00.000Z"),
       status: "PENDING" as const,
@@ -254,7 +254,7 @@ async function seedWeddingData() {
     },
     {
       id: "timer-7",
-      orderIndex: 7,
+      orderIndex: 8,
       name: "Sound - Table-by-table",
       scheduledStartTime: new Date("2025-10-25T18:15:00.000Z"),
       durationMinutes: 45,
@@ -267,7 +267,7 @@ async function seedWeddingData() {
     },
     {
       id: "timer-8",
-      orderIndex: 8,
+      orderIndex: 7,
       name: "Activity - Digital game",
       status: "PENDING" as const,
       scheduledStartTime: new Date("2025-10-25T18:30:00.000Z"),
@@ -328,7 +328,7 @@ async function seedWeddingData() {
     },
     {
       id: "timer-13",
-      orderIndex: 13,
+      orderIndex: 14,
       name: "Sound - French Shot",
       scheduledStartTime: new Date("2025-10-25T20:15:00.000Z"),
       durationMinutes: 35,
@@ -341,7 +341,7 @@ async function seedWeddingData() {
     },
     {
       id: "timer-14",
-      orderIndex: 14,
+      orderIndex: 13,
       name: "Activity - Photomaton",
       scheduledStartTime: new Date("2025-10-25T20:30:00.000Z"),
       status: "PENDING" as const,
@@ -396,7 +396,7 @@ async function seedWeddingData() {
     {
       id: "timer-demo-2",
       orderIndex: 1,
-      name: "Sound - Landing of the bride and groom",
+      name: "Announcement before landing of the bride and the groom",
       scheduledStartTime: new Date("2025-10-25T16:20:00.000Z"),
       status: "PENDING" as const,
       weddingEventId: demoWeddingEvent[0]?.id,
@@ -420,7 +420,7 @@ async function seedWeddingData() {
     },
     {
       id: "timer-demo-4",
-      orderIndex: 4,
+      orderIndex: 5,
       name: "Sound - Speech of best men and maids of honour",
       scheduledStartTime: new Date("2025-10-25T17:05:00.000Z"),
       durationMinutes: 10,
@@ -433,7 +433,7 @@ async function seedWeddingData() {
     },
     {
       id: "timer-demo-5",
-      orderIndex: 5,
+      orderIndex: 4,
       name: "Activity - Phone",
       scheduledStartTime: new Date("2025-10-25T17:30:00.000Z"),
       status: "PENDING" as const,
@@ -457,7 +457,7 @@ async function seedWeddingData() {
     },
     {
       id: "timer-demo-7",
-      orderIndex: 7,
+      orderIndex: 8,
       name: "Sound - Table-by-table",
       scheduledStartTime: new Date("2025-10-25T18:15:00.000Z"),
       durationMinutes: 10,
@@ -470,7 +470,7 @@ async function seedWeddingData() {
     },
     {
       id: "timer-demo-8",
-      orderIndex: 8,
+      orderIndex: 7,
       name: "Activity - Digital game",
       status: "PENDING" as const,
       scheduledStartTime: new Date("2025-10-25T18:30:00.000Z"),
@@ -531,7 +531,7 @@ async function seedWeddingData() {
     },
     {
       id: "timer-demo-13",
-      orderIndex: 13,
+      orderIndex: 14,
       name: "Sound - French Shot",
       scheduledStartTime: new Date("2025-10-25T20:15:00.000Z"),
       durationMinutes: 10,
@@ -544,7 +544,7 @@ async function seedWeddingData() {
     },
     {
       id: "timer-demo-14",
-      orderIndex: 14,
+      orderIndex: 13,
       name: "Activity - Photomaton",
       scheduledStartTime: new Date("2025-10-25T20:30:00.000Z"),
       status: "PENDING" as const,
@@ -605,7 +605,7 @@ async function seedWeddingData() {
       orderIndex: 1,
       createdAt: new Date(),
       contentFr: "Atterrissage des mariés",
-      contentEn: "Landing of the bride and groom",
+      contentEn: "Music after landing of the bride and the groom",
       contentBr: "Desembarque dos noivos",
       displayDurationSec: 60 * 2, // 2 min
     },
@@ -617,7 +617,7 @@ async function seedWeddingData() {
       type: "SOUND",
       url: "/assets/sounds/audio-1-atterrissage-tony.mp3",
       contentFr: "Atterrissage des mariés",
-      contentEn: "Landing of the bride and groom",
+      contentEn: "Announcement before landing",
       contentBr: "Desembarque dos noivos",
       orderIndex: 0,
       createdAt: new Date(),
@@ -805,7 +805,7 @@ async function seedWeddingData() {
       orderIndex: 1,
       createdAt: new Date(),
       contentFr: "Atterrissage des mariés",
-      contentEn: "Landing of the bride and groom",
+      contentEn: "Music after landing of the bride and the groom",
       contentBr: "Desembarque dos noivos",
       displayDurationSec: 15 * 2, // 2 min
     },
@@ -817,7 +817,7 @@ async function seedWeddingData() {
       type: "SOUND",
       url: "/assets/sounds/audio-1-atterrissage-tony.mp3",
       contentFr: "Atterrissage des mariés",
-      contentEn: "Landing of the bride and groom",
+      contentEn: "Announcement before landing",
       contentBr: "Desembarque dos noivos",
       orderIndex: 0,
       createdAt: new Date(),

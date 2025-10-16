@@ -159,10 +159,14 @@ const ActionDisplay = ({
         );
 
         if (nextAutoAction) {
+          const nextAutoActionTimeout = 6000;
           console.log(
-            `[ActionDisplay] Déclenchement automatique de l'action suivante: ${nextAutoAction.id}`,
+            `[ActionDisplay] Déclenchement automatique de l'action suivante dans ${nextAutoActionTimeout / 1000} secondes: ${nextAutoAction.id}`,
           );
-          mutateStartAction(nextAutoAction.id);
+          // Attendre 6 secondes avant de déclencher la prochaine action
+          setTimeout(() => {
+            mutateStartAction(nextAutoAction.id);
+          }, nextAutoActionTimeout);
         } else {
           console.log(
             "[ActionDisplay] Aucune action suivante ne doit être déclenchée automatiquement.",

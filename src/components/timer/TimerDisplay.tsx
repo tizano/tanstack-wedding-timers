@@ -170,7 +170,7 @@ const TimerDisplay = ({
 
         {/* Notification visuelle: action prête à être déclenchée */}
         {isDemo && shouldNotifyAction && !currentAction && (
-          <div className="animate-pulse rounded-lg bg-amber-100 p-4 text-amber-900 dark:bg-amber-900 dark:text-amber-100">
+          <div className="mx-auto mt-4 w-1/2 animate-pulse rounded-lg bg-amber-100 p-4 text-amber-900 dark:bg-amber-900 dark:text-amber-100">
             <p className="text-lg font-bold">⏰ Action prête !</p>
             <p className="text-sm">{shouldNotifyAction.title}</p>
             <p className="text-xs italic">

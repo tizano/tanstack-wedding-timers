@@ -1,9 +1,7 @@
-import { resetAllTimersActions } from "@/lib/actions/timer-actions.action";
 import { getAllTimers, getCurrentTimer } from "@/lib/actions/timer.action";
 import { QUERY_KEYS } from "@/lib/constant/constant";
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import EnableDemoButton from "../demo/EnableDemoButton";
 import { Button } from "../ui/button";
 import TimerCard from "./TimerCard";
@@ -14,8 +12,6 @@ type TimerListProps = {
 };
 export default function TimerList({ timersWithActions, isDemo }: TimerListProps) {
   const navigate = useNavigate();
-  const resetTimers = useServerFn(resetAllTimersActions);
-  const queryClient = useQueryClient();
   const weddingEventId = isDemo ? "wedding-event-demo" : "wedding-event-1";
 
   const { data: currentTimer } = useSuspenseQuery({
@@ -51,15 +47,6 @@ export default function TimerList({ timersWithActions, isDemo }: TimerListProps)
         </p>
 
         <div className="flex gap-2">
-          <Button
-            onClick={() => {
-              resetTimers();
-              queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ALL_TIMERS] });
-            }}
-            className="cursor-pointer"
-          >
-            Reset timers actions
-          </Button>
           <Button
             onClick={() =>
               navigate({
