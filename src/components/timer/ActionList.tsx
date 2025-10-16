@@ -12,6 +12,8 @@ type ActionListProps = {
   currentAction: TimerAction | null;
   display: "list" | "grid";
   shouldPulse?: boolean;
+  markActionAsStarting?: (actionId: string) => void;
+  isActionStarting?: (actionId: string) => boolean;
 };
 
 export default function ActionList({
@@ -19,6 +21,8 @@ export default function ActionList({
   currentAction: currentActionFromProps,
   display = "list",
   shouldPulse = false,
+  markActionAsStarting,
+  isActionStarting,
 }: ActionListProps) {
   const queryClient = useQueryClient();
 
@@ -65,6 +69,16 @@ export default function ActionList({
   if (!actions.length) return null;
 
   const handleStartAction = (action: TimerAction) => {
+    // Vérifier si l'action est déjà en cours de démarrage
+    if (isActionStarting?.(action.id)) {
+      console.log(`⚠️ Action ${action.id} est déjà en cours de démarrage`);
+      return;
+    }
+
+    // Marquer l'action comme en cours de démarrage immédiatement
+    markActionAsStarting?.(action.id);
+
+    // Lancer la mutation
     mutateStartAction(action.id);
   };
 
@@ -86,6 +100,7 @@ export default function ActionList({
             shouldPulse={
               currentActionFromProps?.executedAt !== null && shouldPulse && index === 0
             }
+            isActionStarting={isActionStarting}
           />
         ))}
       </div>

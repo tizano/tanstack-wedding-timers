@@ -96,6 +96,12 @@ const TimerDisplay = ({
     isExpired,
     isRunning,
     markActionAsCompleting,
+    // markActionAsStarting et isActionStarting sont disponibles mais pas encore utilisés dans ce composant
+    // Ils sont utilisés dans ActionList via TimerCard
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    markActionAsStarting,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    isActionStarting,
   } = useTimerWithPusher({
     timer: timerData,
     startTime: timerData.scheduledStartTime,

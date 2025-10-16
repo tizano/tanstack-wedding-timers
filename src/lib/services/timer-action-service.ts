@@ -64,10 +64,6 @@ export class TimerActionService {
       return null;
     }
 
-    // Trouve l'index de l'action courante
-    logger("[getNextActionFromCurrent] Actions depuis le service -- ");
-    console.log(actions);
-
     return {
       action: actions[0],
     };

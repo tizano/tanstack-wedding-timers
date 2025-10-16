@@ -31,6 +31,8 @@ interface UseTimerWithPusherReturn {
   nextAction: TimerAction | null;
   shouldNotifyAction: TimerAction | null;
   markActionAsCompleting: (actionId: string) => void;
+  markActionAsStarting: (actionId: string) => void;
+  isActionStarting: (actionId: string) => boolean;
 }
 
 /**
@@ -122,6 +124,7 @@ export function useTimerWithPusher({
   const hasExpiredRef = useRef(false);
   const triggeredActionsRef = useRef<Set<string>>(new Set());
   const completingActionsRef = useRef<Set<string>>(new Set());
+  const startingActionsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     onExpireRef.current = onExpire;
@@ -197,7 +200,9 @@ export function useTimerWithPusher({
     if (actions && actions.length > 0) {
       const orderedActions = [...actions].filter(
         (action) =>
-          action.status !== "COMPLETED" && !completingActionsRef.current.has(action.id),
+          action.status !== "COMPLETED" &&
+          !completingActionsRef.current.has(action.id) &&
+          !startingActionsRef.current.has(action.id),
       );
 
       let foundCurrentAction: TimerAction | null = null;
@@ -262,6 +267,15 @@ export function useTimerWithPusher({
       completingActionsRef.current.delete(id);
     });
 
+    // Nettoyer les actions marquées comme "en cours de démarrage" si elles sont maintenant RUNNING ou COMPLETED
+    const runningOrCompletedActionIds = actions
+      .filter((a: TimerAction) => a.status === "RUNNING" || a.status === "COMPLETED")
+      .map((a: TimerAction) => a.id);
+
+    runningOrCompletedActionIds.forEach((id: string) => {
+      startingActionsRef.current.delete(id);
+    });
+
     calculateState();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [actions, displayLog]);
@@ -296,6 +310,16 @@ export function useTimerWithPusher({
     // calculateState();
   }, []);
 
+  const markActionAsStarting = useCallback((actionId: string) => {
+    console.log(`🚀 Marquage de l'action ${actionId} comme en cours de démarrage`);
+    startingActionsRef.current.add(actionId);
+    // Pas besoin de recalculer ici, le prochain tick du timer le fera
+  }, []);
+
+  const isActionStarting = useCallback((actionId: string) => {
+    return startingActionsRef.current.has(actionId);
+  }, []);
+
   return {
     timeLeft,
     isExpired,
@@ -304,5 +328,7 @@ export function useTimerWithPusher({
     nextAction,
     shouldNotifyAction,
     markActionAsCompleting,
+    markActionAsStarting,
+    isActionStarting,
   };
 }

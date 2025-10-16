@@ -15,7 +15,6 @@ import { cn, formatTimezoneAgnosticDate } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Calendar, Clock } from "lucide-react";
-import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import ActionList from "../timer/ActionList";
 import TimerCountdown from "../timer/TimerCountdown";
@@ -30,20 +29,19 @@ type TimerCardProps = {
 
 export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardProps) {
   const navigate = useNavigate();
-  const cardRef = useRef<HTMLDivElement>(null);
-  const previousPulseState = useRef<boolean>(false);
 
-  const { timeLeft, isExpired, currentAction } = useTimerWithPusher({
-    timer: timerData,
-    startTime: timerData.scheduledStartTime,
-    durationMinutes: timerData.durationMinutes ?? 0,
-    onExpire: () => {
-      console.log("Timer expired for:", timerData.name);
-    },
-    onActionTrigger: (action) => {
-      console.log("Action triggered:", action.title, action.type);
-    },
-  });
+  const { timeLeft, isExpired, currentAction, markActionAsStarting, isActionStarting } =
+    useTimerWithPusher({
+      timer: timerData,
+      startTime: timerData.scheduledStartTime,
+      durationMinutes: timerData.durationMinutes ?? 0,
+      onExpire: () => {
+        console.log("Timer expired for:", timerData.name);
+      },
+      onActionTrigger: (action) => {
+        console.log("Action triggered:", action.title, action.type);
+      },
+    });
 
   const { mutate: mutateDisplayTimer } = useMutation({
     mutationKey: [MUTATION_KEYS.START_TIMER],
@@ -105,23 +103,6 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
         return totalSecondsLeft <= secondsUntilTrigger && timerData.status === "RUNNING";
       }
 
-      // Si trigger offset positif (ex: 5 pour 5 min après le début)
-      if (triggerOffset > 0) {
-        // Calculer le temps écoulé depuis le début du timer
-        if (!timerData.scheduledStartTime) return false;
-
-        const now = new Date();
-        const startTime =
-          typeof timerData.scheduledStartTime === "string"
-            ? new Date(timerData.scheduledStartTime)
-            : timerData.scheduledStartTime;
-
-        const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000);
-
-        // Activer le pulse quand on a atteint ou dépassé le trigger
-        return elapsedMinutes >= triggerOffset && timerData.status === "RUNNING";
-      }
-
       return false;
     });
   })();
@@ -133,29 +114,9 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
   const shouldPulse = timerNeedsToStart || shouldPulseForAction;
   const pulseClassName = shouldPulse ? " animate-pulse bg-[#A5D6A7]" : "";
 
-  // Scroll to card when it starts pulsing (only once when transitioning from false to true)
-  useEffect(() => {
-    // Détecte la transition de "non-pulse" à "pulse"
-    const justStartedPulsing = shouldPulse && !previousPulseState.current;
-
-    if (justStartedPulsing && cardRef.current) {
-      cardRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }
-
-    // Met à jour l'état précédent
-    previousPulseState.current = shouldPulse;
-  }, [shouldPulse]);
-
-  const shouldShowCountdown = !isManualTimer;
+  // const shouldShowCountdown = !isManualTimer;
 
   const renderCountdown = () => {
-    if (!shouldShowCountdown) {
-      return null;
-    }
-
     if (timerIsCompleted) {
       return (
         <div className="text-center">
@@ -188,7 +149,7 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
     // Default: show countdown (for pending timers)
     return (
       <div className="text-center">
-        <TimerCountdown timeLeft={timeLeft} />
+        {!isManualTimer && <TimerCountdown timeLeft={timeLeft} />}
       </div>
     );
   };
@@ -196,6 +157,9 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
   const renderStatusBadge = (status: Timer["status"]) => {
     return (
       <div className="flex justify-center gap-2">
+        {(isManualTimer || isPunctualTimer) && status === "COMPLETED" && (
+          <StatusBadge status={status} />
+        )}
         {isManualTimer && <StatusBadge status="MANUAL" />}
         {isPunctualTimer && <StatusBadge status="PUNCTUAL" />}
         {!isManualTimer && !isPunctualTimer && <StatusBadge status={status} />}
@@ -261,9 +225,9 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
         )}
       </CardHeader>
 
-      <CardContent className="space-y-6" ref={cardRef}>
+      <CardContent className="space-y-6">
         {/* Countdown Display */}
-        {!isManualTimer && renderCountdown()}
+        {renderCountdown()}
 
         {timerData.durationMinutes !== null &&
           timerData.durationMinutes > 0 &&
@@ -278,25 +242,31 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
         {renderStatusBadge(timerData.status)}
 
         {/* Actions */}
-        <ActionList
-          actions={timerData.actions}
-          currentAction={currentAction}
-          display="list"
-          shouldPulse={timerIsStarted || timerNeedsToStart || shouldPulseForAction}
-        />
+        {!timerIsCompleted && (
+          <ActionList
+            actions={timerData.actions}
+            currentAction={currentAction}
+            display="list"
+            shouldPulse={timerIsStarted || timerNeedsToStart || shouldPulseForAction}
+            markActionAsStarting={markActionAsStarting}
+            isActionStarting={isActionStarting}
+          />
+        )}
       </CardContent>
-      <CardFooter className="flex-1 items-end">
-        <Button
-          disabled={timerIsCompleted}
-          className="mt-1 w-full"
-          onClick={() => {
-            // Trigger the action for the manual timer
-            navigate({ to: `/dashboard/timers/${timerData.id}` });
-          }}
-        >
-          Edit the timer
-        </Button>
-      </CardFooter>
+      {!timerIsCompleted && (
+        <CardFooter className="flex-1 items-end">
+          <Button
+            disabled={timerIsCompleted}
+            className="mt-1 w-full"
+            onClick={() => {
+              // Trigger the action for the manual timer
+              navigate({ to: `/dashboard/timers/${timerData.id}` });
+            }}
+          >
+            Edit the timer
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }

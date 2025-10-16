@@ -41,9 +41,15 @@ const ActionDisplay = ({
   // ET qu'elle est toujours l'action courante
   const isCompleting = completingActionId === currentAction.id;
 
-  console.log("[ActionDisplay] Rendu avec currentAction:", currentAction, {
+  console.log("🎬 [ActionDisplay] RENDER - currentAction:", {
+    id: currentAction.id,
+    title: currentAction.title,
+    type: currentAction.type,
+    status: currentAction.status,
+    url: currentAction.url,
     isCompleting,
     completingActionId,
+    showMediaContent,
   });
 
   const { mutate: mutateStartAction } = useMutation({
@@ -217,13 +223,20 @@ const ActionDisplay = ({
    * Appelé quand le média est terminé (vidéo/audio/image finie)
    */
   const handleMediaComplete = async () => {
-    console.log(`[ActionDisplay] Media completed for action ${currentAction.id}`);
+    console.log(`🎵 [ActionDisplay] handleMediaComplete - Media completed for action:`, {
+      id: currentAction.id,
+      title: currentAction.title,
+      type: currentAction.type,
+    });
     setShowMediaContent(false);
     // Terminer l'action immédiatement après la fin du média
     handleActionComplete();
   };
 
   const resetValueState = () => {
+    console.log(
+      "🔄 [ActionDisplay] resetValueState - Resetting showMediaContent to true",
+    );
     setShowMediaContent(true);
   };
 
@@ -232,16 +245,22 @@ const ActionDisplay = ({
    * Si la prochaine action a le même triggerOffsetMinutes, l'enchaîner automatiquement
    */
   const handleActionComplete = async () => {
+    console.log(`✅ [ActionDisplay] handleActionComplete - Completing action:`, {
+      id: currentAction.id,
+      title: currentAction.title,
+      type: currentAction.type,
+    });
     mutateCompleteAction();
     resetValueState();
     // Notifier le parent
     onActionComplete?.();
-    console.log(
-      `[ActionDisplay][handleActionComplete] Action ${currentAction.id} completed, marking as complete...`,
-    );
   };
 
   const renderMediaContent = () => {
+    console.log(
+      `🎨 [ActionDisplay] renderMediaContent - Rendering type: ${currentAction.type} for action ${currentAction.id}`,
+    );
+
     switch (currentAction.type) {
       case "VIDEO":
         return (
@@ -249,10 +268,18 @@ const ActionDisplay = ({
         );
 
       case "SOUND":
+        console.log(`🔊 [ActionDisplay] Rendering SOUND action:`, {
+          id: currentAction.id,
+          url: currentAction.url,
+        });
         return (
           <SoundAction action={currentAction} onMediaComplete={handleMediaComplete} />
         );
       case "IMAGE_SOUND":
+        console.log(`🔊🖼️ [ActionDisplay] Rendering IMAGE_SOUND action:`, {
+          id: currentAction.id,
+          urls: currentAction.urls,
+        });
         return (
           <ImageWithSound action={currentAction} onMediaComplete={handleMediaComplete} />
         );
@@ -273,7 +300,13 @@ const ActionDisplay = ({
 
   // Ne rien afficher si l'action est en cours de complétion
   if (isCompleting) {
-    console.log("[ActionDisplay] Action en cours de complétion, masquage de l'affichage");
+    console.log(
+      "🚫 [ActionDisplay] Action en cours de complétion, masquage de l'affichage:",
+      {
+        id: currentAction.id,
+        title: currentAction.title,
+      },
+    );
     return null;
   }
 
@@ -291,7 +324,12 @@ const ActionDisplay = ({
 
           {/* Contenu média (vidéo/image/son/galerie) */}
           {showMediaContent && (
-            <div className="absolute inset-0 flex h-screen w-screen flex-col items-center justify-center gap-12">
+            <div
+              className={cn(
+                "absolute inset-0 flex h-screen w-screen flex-col items-center justify-center gap-12",
+                currentAction.type === "SOUND" && "pointer-events-none",
+              )}
+            >
               {shouldShowMiniTimer && (
                 <div className="text-gray-100">
                   <TimerCountdown timeLeft={timeLeft} variant="large" />

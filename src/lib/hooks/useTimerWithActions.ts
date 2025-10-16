@@ -63,6 +63,15 @@ interface UseTimerWithActionsReturn {
    * pour éviter qu'elle ne soit re-déclenchée pendant l'appel API
    */
   markActionAsCompleting: (actionId: string) => void;
+  /**
+   * Marque une action comme étant en cours de démarrage (optimistic update)
+   * pour éviter les doubles clics sur le bouton "Start Action"
+   */
+  markActionAsStarting: (actionId: string) => void;
+  /**
+   * Vérifie si une action est en cours de démarrage
+   */
+  isActionStarting: (actionId: string) => boolean;
 }
 
 /**
@@ -140,6 +149,7 @@ export function useTimerWithActions({
   const hasExpiredRef = useRef(false);
   const triggeredActionsRef = useRef<Set<string>>(new Set());
   const completingActionsRef = useRef<Set<string>>(new Set()); // Actions en cours de complétion
+  const startingActionsRef = useRef<Set<string>>(new Set()); // Actions en cours de démarrage
 
   useEffect(() => {
     onExpireRef.current = onExpire;
@@ -212,10 +222,12 @@ export function useTimerWithActions({
     // Gérer les actions
     if (actions && actions.length > 0) {
       // Trier les actions par ordre de déclenchement
-      // Exclure les actions complétées ET celles en cours de complétion
+      // Exclure les actions complétées ET celles en cours de complétion/démarrage
       const orderedActions = [...actions].filter(
         (action) =>
-          action.status !== "COMPLETED" && !completingActionsRef.current.has(action.id),
+          action.status !== "COMPLETED" &&
+          !completingActionsRef.current.has(action.id) &&
+          !startingActionsRef.current.has(action.id),
       );
 
       // Logique de gestion des actions :
@@ -303,6 +315,15 @@ export function useTimerWithActions({
     completedActionIds.forEach((id) => {
       completingActionsRef.current.delete(id);
     });
+
+    // Nettoyer les actions marquées comme "en cours de démarrage" si elles sont maintenant RUNNING ou COMPLETED
+    const runningOrCompletedActionIds = actions
+      .filter((a) => a.status === "RUNNING" || a.status === "COMPLETED")
+      .map((a) => a.id);
+
+    runningOrCompletedActionIds.forEach((id) => {
+      startingActionsRef.current.delete(id);
+    });
   }, [actions]);
 
   useEffect(() => {
@@ -324,6 +345,23 @@ export function useTimerWithActions({
     [calculateState, displayLog],
   );
 
+  const markActionAsStarting = useCallback(
+    (actionId: string) => {
+      if (displayLog) {
+        console.log(`🚀 Marquage de l'action ${actionId} comme en cours de démarrage`);
+      }
+      startingActionsRef.current.add(actionId);
+
+      // Recalculer immédiatement l'état pour mettre à jour shouldNotifyAction
+      calculateState();
+    },
+    [calculateState, displayLog],
+  );
+
+  const isActionStarting = useCallback((actionId: string) => {
+    return startingActionsRef.current.has(actionId);
+  }, []);
+
   return {
     timeLeft,
     isExpired,
@@ -332,5 +370,7 @@ export function useTimerWithActions({
     nextAction,
     shouldNotifyAction,
     markActionAsCompleting,
+    markActionAsStarting,
+    isActionStarting,
   };
 }

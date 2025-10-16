@@ -12,6 +12,7 @@ import appCss from "@/styles.css?url";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { PlaybackSpeedProvider } from "@/lib/context/PlaybackSpeedContext";
 import { PusherProvider } from "@/lib/provider/puhser/pusher-provider";
 
 export const Route = createRootRouteWithContext<{
@@ -66,8 +67,10 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
       <body>
         <PusherProvider>
           <ThemeProvider>
-            {children}
-            <Toaster richColors position="top-center" />
+            <PlaybackSpeedProvider>
+              {children}
+              <Toaster richColors position="top-center" />
+            </PlaybackSpeedProvider>
           </ThemeProvider>
         </PusherProvider>
         {/* <DevTools /> */}

@@ -2,6 +2,7 @@ import { TimerAction } from "@/lib/db/schema/timer.schema";
 import { TimerStatus } from "@/lib/types/timer.type";
 import { cn } from "@/lib/utils";
 import { Image, ImagePlay, Video, Volume2 } from "lucide-react";
+import { useState } from "react";
 import StatusBadge from "../admin/StatusBadge";
 import { Button } from "../ui/button";
 
@@ -10,6 +11,7 @@ type ActionItemProps = {
   onActionStart?: (action: TimerAction) => void;
   currentAction?: TimerAction | null;
   shouldPulse?: boolean;
+  isActionStarting?: (actionId: string) => boolean;
 };
 
 const ActionItem = ({
@@ -17,8 +19,12 @@ const ActionItem = ({
   onActionStart,
   currentAction,
   shouldPulse = false,
+  isActionStarting,
 }: ActionItemProps) => {
   const isCurrentAction = currentAction?.id === action.id;
+  const isStarting = isActionStarting?.(action.id) ?? false;
+  const [isStartClicked, setIsStartClicked] = useState(false);
+  const [isCancelClicked, setIsCancelClicked] = useState(false);
 
   // Log pour debug
   if (action.status === "RUNNING" || isCurrentAction) {
@@ -123,16 +129,30 @@ const ActionItem = ({
       </div>
       <div className="flex flex-col gap-2">
         {action.status !== "COMPLETED" && (
-          <Button
-            variant="outline"
-            className="mt-2"
-            size="sm"
-            onClick={() => {
-              onActionStart?.(action);
-            }}
-          >
-            Start Action
-          </Button>
+          <>
+            <Button
+              size="sm"
+              onClick={() => {
+                setIsStartClicked(true);
+                onActionStart?.(action);
+              }}
+              disabled={isStartClicked || isStarting || action.status === "RUNNING"}
+            >
+              {isStartClicked || isStarting ? "Running..." : "Start Action"}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsCancelClicked(true);
+                // onActionCancel?.(action);
+              }}
+              disabled={isCancelClicked}
+            >
+              {isCancelClicked ? "Canceling..." : "Cancel"}
+            </Button>
+          </>
         )}
 
         <StatusBadge status={getActionStatus(action)} />

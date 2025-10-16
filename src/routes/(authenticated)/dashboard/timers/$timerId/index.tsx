@@ -223,7 +223,7 @@ function RouteComponent() {
             </div>
 
             {/* Cascade Update Checkbox */}
-            <div className="flex items-center space-x-2">
+            {/* <div className="flex items-center space-x-2">
               <input
                 id="cascadeUpdate"
                 type="checkbox"
@@ -239,7 +239,7 @@ function RouteComponent() {
                   If duration changes, shift all subsequent timers by the difference
                 </span>
               </label>
-            </div>
+            </div> */}
 
             {/* Submit and Cancel Buttons */}
             <div className="flex justify-end space-x-4 pt-6">
