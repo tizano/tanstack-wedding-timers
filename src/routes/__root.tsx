@@ -44,7 +44,16 @@ export const Route = createRootRouteWithContext<{
         content: "A minimal starter template for 🏝️ TanStack Start.",
       },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      // preload this video casa-de-cha.mp4
+      {
+        rel: "prefetch",
+        href: "/assets/videos/casa-de-cha.mp4",
+        as: "video",
+        type: "video/mp4",
+      },
+    ],
   }),
   component: RootComponent,
 });

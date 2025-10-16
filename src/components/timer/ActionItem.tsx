@@ -127,9 +127,9 @@ const ActionItem = ({
           {renderTriggerText(action)}
         </div>
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col justify-between gap-2">
         {action.status !== "COMPLETED" && (
-          <>
+          <div className="flex flex-col gap-2">
             <Button
               size="sm"
               onClick={() => {
@@ -152,9 +152,8 @@ const ActionItem = ({
             >
               {isCancelClicked ? "Canceling..." : "Cancel"}
             </Button>
-          </>
+          </div>
         )}
-
         <StatusBadge status={getActionStatus(action)} />
       </div>
     </div>

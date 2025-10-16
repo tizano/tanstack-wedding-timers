@@ -60,7 +60,7 @@ export const actionsData: TimerAction[] = [
     status: "PENDING",
     triggerOffsetMinutes: -1,
     title: "Vidéo de clôture",
-    url: "/assets/videos/video-demo-with-sound.mp4",
+    url: "/assets/videos/casa-de-cha.mp4",
     urls: [],
     contentFr: "Contenu en français pour la troisième action",
     contentEn: "English content for the third action",
