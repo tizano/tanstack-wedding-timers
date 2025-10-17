@@ -111,10 +111,8 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
   // to draw attention to the admin
   // when the timer is pending and the scheduled start time has passed
   // OR when any action's trigger time is reached
-  const shouldPulse = timerNeedsToStart || shouldPulseForAction;
-  const pulseClassName = shouldPulse
-    ? " animate-pulse bg-[#A5D6A7] dark:bg-green-900"
-    : "";
+  const shouldPulse =
+    timerNeedsToStart || shouldPulseForAction || (timerIsStarted && shouldPulseForAction);
 
   // const shouldShowCountdown = !isManualTimer;
 
@@ -174,7 +172,9 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
       className={cn(
         "mx-auto w-full max-w-2xl",
         isDemo && "overflow-hidden pt-0",
-        pulseClassName,
+        shouldPulse && "animate-pulse bg-[#FF3D00] dark:bg-[#E64A19]",
+        shouldPulse && isCurrent && "animate-pulse !bg-[#651FFF] dark:!bg-[#304FFE]",
+
         timerIsCompleted &&
           "cursor-not-allowed bg-blue-100/80 opacity-60 dark:bg-blue-950",
         isCurrent && "border-2 border-blue-400 bg-blue-100/80 dark:bg-blue-950",
