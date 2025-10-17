@@ -128,9 +128,7 @@ export class TimerService {
     // getTimezoneOffset() retourne un nombre positif si on est en retard sur UTC
     // Exemple: UTC+2 (Paris en été) = -120 minutes
     // Donc pour obtenir l'heure locale, on soustrait l'offset
-    const now = new Date(
-      new Date(clientLocalDate).getTime() - clientTimezoneOffset * 60000,
-    );
+    const now = new Date(clientLocalDate);
 
     logger(`Client local time: ${now.toISOString()}`);
 
@@ -158,14 +156,12 @@ export class TimerService {
       currentScheduledTime,
     );
 
-    // add a test if localhost is in the URL, if yes, use convertToTimezoneAgnosticDate(now);
+    // really dirty hack to fix scheduled time in demo mode
     if (env.VITE_BASE_URL.includes("localhost")) {
       currentScheduledTime = convertToTimezoneAgnosticDate(now);
     } else {
       // remove the utc offset to have the local time
-      currentScheduledTime = new Date(
-        now.getTime() - now.getTimezoneOffset() * 60000 + 1.5 * 60000,
-      );
+      currentScheduledTime = new Date(now.getTime() - clientTimezoneOffset * 60000);
     }
 
     logger("[Start wedding demo] AFTER fixing scheduled time:");
