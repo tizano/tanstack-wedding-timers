@@ -137,6 +137,11 @@ export class TimerService {
     // Le premier timer commence maintenant + 1.5 minutes
     let currentScheduledTime: Date | null = now;
 
+    console.log(
+      "[Start wedding demo] Initial scheduled time BEFORE fixing:",
+      currentScheduledTime,
+    );
+
     // add a test if localhost is in the URL, if yes, use convertToTimezoneAgnosticDate(now);
     if (env.VITE_BASE_URL.includes("localhost")) {
       currentScheduledTime = convertToTimezoneAgnosticDate(now);
@@ -147,7 +152,7 @@ export class TimerService {
       );
     }
 
-    logger("[Start wedding demo] Initial scheduled time:");
+    logger("[Start wedding demo] AFTER fixing scheduled time:");
     console.log(currentScheduledTime);
 
     if (currentScheduledTime) {
