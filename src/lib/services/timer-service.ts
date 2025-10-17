@@ -135,6 +135,11 @@ export class TimerService {
     // add a test if localhost is in the URL, if yes, use convertToTimezoneAgnosticDate(now);
     if (env.VITE_BASE_URL.includes("localhost")) {
       currentScheduledTime = convertToTimezoneAgnosticDate(now);
+    } else {
+      // remove the utc offset to have the local time
+      currentScheduledTime = new Date(
+        now.getTime() - now.getTimezoneOffset() * 60000 + 1.5 * 60000,
+      );
     }
 
     logger("[Start wedding demo] Initial scheduled time:");
