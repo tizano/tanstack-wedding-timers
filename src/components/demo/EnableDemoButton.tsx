@@ -13,6 +13,7 @@ function EnableDemoButton() {
         data: {
           weddingEventId: "wedding-event-demo",
           weddingEventIdToCopyFrom: "wedding-event-1",
+          clientLocalDate: new Date().toISOString(),
         },
       });
     },

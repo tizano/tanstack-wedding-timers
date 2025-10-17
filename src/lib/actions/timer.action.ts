@@ -11,6 +11,7 @@ const getAllTimersSchema = z.object({ weddingEventId: z.string() });
 const startWeddingDemoSchema = z.object({
   weddingEventId: z.string(),
   weddingEventIdToCopyFrom: z.string(),
+  clientLocalDate: z.string(),
 });
 const completeTimerSchema = z.object({ timerId: z.string() });
 const resetWeddingSchema = z.object({
@@ -64,6 +65,7 @@ export const startWeddingDemo = createServerFn({ method: "POST" })
     return await timerService.startWeddingDemo(
       data.weddingEventId,
       data.weddingEventIdToCopyFrom,
+      data.clientLocalDate,
     );
   });
 

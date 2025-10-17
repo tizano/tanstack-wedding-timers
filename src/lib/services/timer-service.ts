@@ -107,11 +107,16 @@ export class TimerService {
    * Démarre le premier timer
    * Met à jour le currentTimerId de l'événement
    * Notifie via Pusher
+   * @param clientLocalDate - Date locale du client au moment du clic (ISO string)
    */
-  async startWeddingDemo(weddingEventId: string, weddingEventIdToCopyFrom: string) {
+  async startWeddingDemo(
+    weddingEventId: string,
+    weddingEventIdToCopyFrom: string,
+    clientLocalDate: string,
+  ) {
     logger(`Starting wedding demo for event: ${weddingEventId}`);
 
-    const now = new Date();
+    const now = new Date(clientLocalDate);
 
     // 1. Reset tous les timers et actions du mariage
     await this.resetWeddingFromNormal(weddingEventId, weddingEventIdToCopyFrom);
