@@ -6,6 +6,9 @@ import { Button } from "../ui/button";
 
 function EnableDemoButton() {
   const navigate = useNavigate();
+  const clientLocalDate = new Date().toISOString();
+  console.log("[ClientDate] -- ", clientLocalDate);
+
   const { mutate, isPending, isSuccess } = useMutation({
     mutationKey: [MUTATION_KEYS.START_WEDDING_DEMO],
     mutationFn: async () => {
@@ -13,7 +16,7 @@ function EnableDemoButton() {
         data: {
           weddingEventId: "wedding-event-demo",
           weddingEventIdToCopyFrom: "wedding-event-1",
-          clientLocalDate: new Date().toISOString(),
+          clientLocalDate: clientLocalDate,
         },
       });
     },
