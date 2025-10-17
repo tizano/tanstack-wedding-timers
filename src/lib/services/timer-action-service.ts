@@ -201,6 +201,44 @@ export class TimerActionService {
   }
 
   /**
+   * Annule une action en cours (force le démontage)
+   */
+  async cancelAction(actionId: string) {
+    logger(`Cancelling action: ${actionId}`);
+
+    const action = await db.query.timerAction.findFirst({
+      where: eq(timerAction.id, actionId),
+    });
+
+    if (!action) {
+      logger(`Action not found for cancellation: ${actionId}`);
+      throw new Error(`Action ${actionId} non trouvée`);
+    }
+
+    const now = new Date();
+
+    // Remettre l'action à PENDING et effacer executedAt si présent
+    await db
+      .update(timerAction)
+      .set({
+        status: "PENDING",
+        executedAt: null,
+        updatedAt: now,
+      })
+      .where(eq(timerAction.id, actionId));
+
+    // Notifier via Pusher pour forcer le démontage
+    await pusher.trigger(CHANNEL, ACTION_UPDATED, {
+      actionId,
+      timerId: action.timerId,
+      action: "cancelled",
+      updatedAt: now.toISOString(),
+    });
+
+    return { action, cancelled: true };
+  }
+
+  /**
    * Reset toutes les actions d'un timer (pour démo)
    */
   async resetTimerActions(timerId: string) {

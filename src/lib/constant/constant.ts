@@ -8,6 +8,7 @@ const QUERY_KEYS = {
 const MUTATION_KEYS = {
   START_ACTION: "start-action",
   COMPLETE_ACTION: "complete-action",
+  CANCEL_ACTION: "cancel-action",
   UPDATE_TIMER: "update-timer",
   START_TIMER: "start-timer",
   RESET_WEDDING: "reset-wedding",

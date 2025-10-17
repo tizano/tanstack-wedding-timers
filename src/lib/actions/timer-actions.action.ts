@@ -10,6 +10,7 @@ const getNextActionSchema = z.object({
 });
 const startActionSchema = z.object({ actionId: z.string() });
 const completeActionSchema = z.object({ actionId: z.string() });
+const cancelActionSchema = z.object({ actionId: z.string() });
 const resetTimerActionsSchema = z.object({ timerId: z.string() });
 
 // Query functions (GET)
@@ -30,6 +31,12 @@ export const completeAction = createServerFn({ method: "POST" })
   .inputValidator(completeActionSchema)
   .handler(async ({ data }) => {
     return await timerActionService.completeAction(data.actionId);
+  });
+
+export const cancelAction = createServerFn({ method: "POST" })
+  .inputValidator(cancelActionSchema)
+  .handler(async ({ data }) => {
+    return await timerActionService.cancelAction(data.actionId);
   });
 
 export const resetTimerActions = createServerFn({ method: "POST" })

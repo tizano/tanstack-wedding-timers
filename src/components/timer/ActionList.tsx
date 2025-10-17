@@ -1,4 +1,4 @@
-import { startAction } from "@/lib/actions/timer-actions.action";
+import { cancelAction, startAction } from "@/lib/actions/timer-actions.action";
 import { updateTimer } from "@/lib/actions/timer.action";
 import { MUTATION_KEYS, QUERY_KEYS } from "@/lib/constant/constant";
 import type { TimerAction } from "@/lib/db/schema/timer.schema";
@@ -42,7 +42,13 @@ export default function ActionList({
 
   const { mutate: mutateStartAction } = useMutation({
     mutationKey: [MUTATION_KEYS.START_ACTION],
-    mutationFn: async (actionId: string) => {
+    mutationFn: async ({
+      actionId,
+      onComplete,
+    }: {
+      actionId: string;
+      onComplete: () => void;
+    }) => {
       logger("Starting action from TimerCard:");
 
       console.log("Starting action ID:", actionId);
@@ -50,30 +56,73 @@ export default function ActionList({
         throw new Error("No action ID to start");
       }
 
-      return await startAction({
-        data: {
-          actionId,
-        },
-      });
+      return {
+        result: await startAction({
+          data: {
+            actionId,
+          },
+        }),
+        onComplete,
+      };
     },
-    onSuccess: ({ action }) => {
+    onSuccess: ({ result, onComplete }) => {
       // Optionally refetch or update the timer data after mutation
-      mutateTimerStartDate(action.timerId);
+      mutateTimerStartDate(result.action.timerId);
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ALL_TIMERS] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TIMER] });
       toast.success("Timer action triggered successfully!");
+      onComplete(); // Appeler le callback pour réinitialiser l'état
     },
-    onError: (error) => {
+    onError: (error, { onComplete }) => {
       toast.error(`${error.message}`);
+      onComplete(); // Appeler le callback même en cas d'erreur
+    },
+  });
+
+  const { mutate: mutateCancelAction } = useMutation({
+    mutationKey: [MUTATION_KEYS.CANCEL_ACTION],
+    mutationFn: async ({
+      actionId,
+      onComplete,
+    }: {
+      actionId: string;
+      onComplete: () => void;
+    }) => {
+      logger("Cancelling action:");
+
+      console.log("Cancelling action ID:", actionId);
+      if (!actionId) {
+        throw new Error("No action ID to cancel");
+      }
+
+      return {
+        result: await cancelAction({
+          data: {
+            actionId,
+          },
+        }),
+        onComplete,
+      };
+    },
+    onSuccess: ({ onComplete }) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ALL_TIMERS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TIMER] });
+      toast.success("Action cancelled successfully!");
+      onComplete(); // Appeler le callback pour réinitialiser l'état
+    },
+    onError: (error, { onComplete }) => {
+      toast.error(`Failed to cancel action: ${error.message}`);
+      onComplete(); // Appeler le callback même en cas d'erreur
     },
   });
 
   if (!actions.length) return null;
 
-  const handleStartAction = (action: TimerAction) => {
+  const handleActionStart = (action: TimerAction, onComplete: () => void) => {
     // Vérifier si l'action est déjà en cours de démarrage
     if (isActionStarting?.(action.id)) {
       console.log(`⚠️ Action ${action.id} est déjà en cours de démarrage`);
+      onComplete(); // Réinitialiser l'état si l'action est déjà en cours
       return;
     }
 
@@ -81,7 +130,12 @@ export default function ActionList({
     markActionAsStarting?.(action.id);
 
     // Lancer la mutation
-    mutateStartAction(action.id);
+    mutateStartAction({ actionId: action.id, onComplete });
+  };
+
+  const handleActionCancel = (action: TimerAction, onComplete: () => void) => {
+    console.log(`🚫 Cancelling action ${action.id}`);
+    mutateCancelAction({ actionId: action.id, onComplete });
   };
 
   return (
@@ -97,7 +151,10 @@ export default function ActionList({
           <ActionItem
             key={action.id}
             action={action}
-            onActionStart={(action) => handleStartAction(action)}
+            onActionStart={(action, onComplete) => handleActionStart(action, onComplete)}
+            onActionCancel={(action, onComplete) =>
+              handleActionCancel(action, onComplete)
+            }
             currentAction={currentActionFromProps}
             shouldPulse={
               currentActionFromProps?.executedAt !== null && shouldPulse && index === 0

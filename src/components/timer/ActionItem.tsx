@@ -5,14 +5,16 @@ import { Image, ImagePlay, Video, Volume2 } from "lucide-react";
 import { useState } from "react";
 import StatusBadge from "../admin/StatusBadge";
 import { Button } from "../ui/button";
+import ActionCancelDialog from "./ActionCancelDialog";
 
 type ActionItemProps = {
   action: TimerAction;
-  onActionStart?: (action: TimerAction) => void;
+  onActionStart?: (action: TimerAction, onComplete: () => void) => void;
   currentAction?: TimerAction | null;
   shouldPulse?: boolean;
   isTimerCompleted?: boolean;
   isActionStarting?: (actionId: string) => boolean;
+  onActionCancel?: (action: TimerAction, onComplete: () => void) => void;
 };
 
 const ActionItem = ({
@@ -22,21 +24,13 @@ const ActionItem = ({
   shouldPulse = false,
   isTimerCompleted = false,
   isActionStarting,
+  onActionCancel,
 }: ActionItemProps) => {
   const isCurrentAction = currentAction?.id === action.id;
   const isStarting = isActionStarting?.(action.id) ?? false;
   const [isStartClicked, setIsStartClicked] = useState(false);
-  const [isCancelClicked, setIsCancelClicked] = useState(false);
-
-  // Log pour debug
-  if (action.status === "RUNNING" || isCurrentAction) {
-    console.log(`[ActionItem] ${action.contentEn}:`, {
-      actionId: action.id,
-      status: action.status,
-      currentActionId: currentAction?.id,
-      isCurrentAction,
-    });
-  }
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const renderActionIcon = (action: TimerAction) => {
     switch (action.type) {
@@ -111,64 +105,89 @@ const ActionItem = ({
     return "NOT_EXECUTED";
   };
 
-  return (
-    <div
-      className={cn(
-        "bg-muted/70 flex gap-3 rounded-lg border p-3",
-        isCurrentAction && "border-green-500 bg-green-200/50 dark:bg-green-950",
-        shouldPulse && "animate-pulse bg-orange-200/50 dark:bg-orange-950",
-        isTimerCompleted && "items-center",
-      )}
-    >
-      <div className={cn(!isTimerCompleted && "mt-1")}>{renderActionIcon(action)}</div>
-      <div className="relative flex-1">
-        <div
-          className={cn(
-            "font-medium",
-            isTimerCompleted && "line-clamp-1 overflow-hidden text-ellipsis",
-          )}
-        >
-          {action.contentEn}
-        </div>
-        {!isTimerCompleted && (
-          <div className="text-muted-foreground flex flex-col gap-1 text-sm">
-            <span>
-              {action.type} • {renderActionUrl(action)}
-            </span>
-            {renderTriggerText(action)}
-          </div>
-        )}
-      </div>
-      <div className="flex flex-col justify-between gap-2">
-        {action.status !== "COMPLETED" && (
-          <div className="flex flex-col gap-2">
-            <Button
-              size="sm"
-              onClick={() => {
-                setIsStartClicked(true);
-                onActionStart?.(action);
-              }}
-              disabled={isStartClicked || isStarting || action.status === "RUNNING"}
-            >
-              {isStartClicked || isStarting ? "Running..." : "Start Action"}
-            </Button>
+  const handleCancelClick = () => {
+    setShowCancelDialog(true);
+  };
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setIsCancelClicked(true);
-                // onActionCancel?.(action);
-              }}
-              disabled={isCancelClicked}
-            >
-              {isCancelClicked ? "Canceling..." : "Cancel"}
-            </Button>
-          </div>
+  const handleCancelConfirm = () => {
+    setIsCancelling(true);
+    setShowCancelDialog(false); // Fermer le dialog immédiatement
+    onActionCancel?.(action, () => {
+      // Callback appelé quand l'annulation est terminée (succès ou erreur)
+      setIsCancelling(false);
+    });
+  };
+
+  return (
+    <>
+      <ActionCancelDialog
+        action={action}
+        open={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        onConfirm={handleCancelConfirm}
+        isLoading={isCancelling}
+      />
+      <div
+        className={cn(
+          "bg-muted/70 flex gap-3 rounded-lg border p-3",
+          isCurrentAction && "border-green-500 bg-green-200/50 dark:bg-green-950",
+          shouldPulse && "animate-pulse bg-orange-200/50 dark:bg-orange-950",
+          isTimerCompleted && "items-center",
         )}
-        <StatusBadge status={getActionStatus(action)} />
+      >
+        <div className={cn(!isTimerCompleted && "mt-1")}>{renderActionIcon(action)}</div>
+        <div className="relative flex-1">
+          <div
+            className={cn(
+              "font-medium",
+              isTimerCompleted && "line-clamp-1 overflow-hidden text-ellipsis",
+            )}
+          >
+            {action.contentEn}
+          </div>
+          {!isTimerCompleted && (
+            <div className="text-muted-foreground flex flex-col gap-1 text-sm">
+              <span>
+                {action.type} • {renderActionUrl(action)}
+              </span>
+              {renderTriggerText(action)}
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col justify-between gap-2">
+          {action.status !== "COMPLETED" && (
+            <div className="flex flex-col gap-2">
+              <Button
+                size="sm"
+                onClick={() => {
+                  setIsStartClicked(true);
+                  onActionStart?.(action, () => {
+                    // Callback appelé quand le démarrage est terminé (succès ou erreur)
+                    setIsStartClicked(false);
+                  });
+                }}
+                disabled={isStartClicked || isStarting || action.status === "RUNNING"}
+              >
+                {isStartClicked || isStarting ? "Running..." : "Start Action"}
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancelClick}
+                disabled={
+                  isCancelling ||
+                  (action.status !== "RUNNING" && !isStartClicked && !isStarting)
+                }
+              >
+                {isCancelling ? "Canceling..." : "Cancel"}
+              </Button>
+            </div>
+          )}
+          <StatusBadge status={getActionStatus(action)} />
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

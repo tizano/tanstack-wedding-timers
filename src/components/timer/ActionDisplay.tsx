@@ -5,7 +5,7 @@ import { type TimerAction } from "@/lib/db/schema/timer.schema";
 import { TimeLeft } from "@/lib/hooks/useTimerWithActions";
 import { cn } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ImageAction, ImageWithSound, SoundAction, VideoAction } from "./actions";
 import TimerCountdown from "./TimerCountdown";
 
@@ -41,16 +41,31 @@ const ActionDisplay = ({
   // ET qu'elle est toujours l'action courante
   const isCompleting = completingActionId === currentAction.id;
 
-  console.log("🎬 [ActionDisplay] RENDER - currentAction:", {
-    id: currentAction.id,
-    title: currentAction.title,
-    type: currentAction.type,
-    status: currentAction.status,
-    url: currentAction.url,
-    isCompleting,
+  // Effet pour forcer le démontage si l'action est annulée (status passe à PENDING)
+  useEffect(() => {
+    if (
+      currentAction.status === "PENDING" &&
+      currentAction.executedAt === null &&
+      completingActionId !== currentAction.id
+    ) {
+      console.log(
+        "🚫 [ActionDisplay] Action annulée détectée, forçage du démontage:",
+        currentAction.id,
+      );
+      // Utiliser un timeout pour éviter les problèmes de setState dans useEffect
+      const timeoutId = setTimeout(() => {
+        setShowMediaContent(false);
+        setCompletingActionId(currentAction.id);
+      }, 0);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [
+    currentAction.status,
+    currentAction.executedAt,
+    currentAction.id,
     completingActionId,
-    showMediaContent,
-  });
+  ]);
 
   const { mutate: mutateStartAction } = useMutation({
     mutationKey: [MUTATION_KEYS.START_ACTION],
@@ -147,17 +162,6 @@ const ActionDisplay = ({
 
       // Si l'API retourne des actions restantes, vérifier s'il faut en déclencher une automatiquement
       if (remainingActions && remainingActions.length > 0) {
-        console.log(
-          "[ActionDisplay] remainingActions:",
-          remainingActions.map((a) => ({
-            id: a.id,
-            title: a.title,
-            triggerOffsetMinutes: a.triggerOffsetMinutes,
-            executedAt: a.executedAt,
-            status: a.status,
-          })),
-        );
-
         // Trouver la prochaine action non exécutée avec triggerOffsetMinutes === 0
         // On ne vérifie PAS le status car il peut ne pas encore être à jour
         const nextAutoAction = remainingActions.find(
