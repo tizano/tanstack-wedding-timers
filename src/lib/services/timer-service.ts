@@ -1,5 +1,5 @@
 import { env } from "@/env/server";
-import { and, asc, eq, gt, inArray } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, not } from "drizzle-orm";
 import Pusher from "pusher";
 
 import { db } from "@/lib/db";
@@ -416,6 +416,7 @@ export class TimerService {
         gt(timer.orderIndex, currentOrderIndex),
         eq(timer.isManual, false),
         gt(timer.durationMinutes, 0),
+        not(eq(timer.status, "COMPLETED")),
       ),
       orderBy: [asc(timer.orderIndex)],
     });
