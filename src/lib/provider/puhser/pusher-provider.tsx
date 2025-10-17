@@ -117,7 +117,6 @@ export function PusherProvider({ children }: PusherProviderProps) {
     // Créer une fonction unique pour ce composant
     const handleTimerUpdate = async (data: { id?: string; updatedAt?: string }) => {
       logger(`Timer updated via Pusher: ${JSON.stringify(data)}`);
-      console.log("Je passe par le timer update");
 
       // Vérifier si c'est une vraie mise à jour en comparant updatedAt
       if (data.updatedAt) {
@@ -199,7 +198,6 @@ export function PusherProvider({ children }: PusherProviderProps) {
         ...data,
         punctualTimer,
       });
-      console.log("Je passe par l action update");
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.ACTION],
       });
