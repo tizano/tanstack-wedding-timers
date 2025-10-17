@@ -130,7 +130,16 @@ export class TimerService {
 
     // 3. Calculer les scheduledStartTime pour chaque timer
     // Le premier timer commence maintenant + 1.5 minutes
-    let currentScheduledTime: Date | null = convertToTimezoneAgnosticDate(now);
+    let currentScheduledTime: Date | null = now;
+
+    // add a test if localhost is in the URL, if yes, use convertToTimezoneAgnosticDate(now);
+    if (env.VITE_BASE_URL.includes("localhost")) {
+      currentScheduledTime = convertToTimezoneAgnosticDate(now);
+    }
+
+    logger("[Start wedding demo] Initial scheduled time:");
+    console.log(currentScheduledTime);
+
     if (currentScheduledTime) {
       currentScheduledTime = new Date(currentScheduledTime.getTime() + 1.5 * 60000);
     }
