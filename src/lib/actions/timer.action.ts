@@ -12,6 +12,7 @@ const startWeddingDemoSchema = z.object({
   weddingEventId: z.string(),
   weddingEventIdToCopyFrom: z.string(),
   clientLocalDate: z.string(),
+  clientTimezoneOffset: z.number(), // Offset en minutes du client
 });
 const completeTimerSchema = z.object({ timerId: z.string() });
 const resetWeddingSchema = z.object({
@@ -66,6 +67,7 @@ export const startWeddingDemo = createServerFn({ method: "POST" })
       data.weddingEventId,
       data.weddingEventIdToCopyFrom,
       data.clientLocalDate,
+      data.clientTimezoneOffset,
     );
   });
 

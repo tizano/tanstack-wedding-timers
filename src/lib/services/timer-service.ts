@@ -6,6 +6,11 @@ import { db } from "@/lib/db";
 import { timer, timerAction, UpdateTimer, weddingEvent } from "../db/schema";
 import { CHANNEL, convertToTimezoneAgnosticDate, logger, TIMER_UPDATED } from "../utils";
 
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+
+dayjs.extend(utc);
+
 const pusher = new Pusher({
   appId: env.PUSHER_APP_ID,
   key: env.VITE_PUSHER_KEY,
@@ -107,16 +112,27 @@ export class TimerService {
    * Démarre le premier timer
    * Met à jour le currentTimerId de l'événement
    * Notifie via Pusher
-   * @param clientLocalDate - Date locale du client au moment du clic (ISO string)
+   * @param clientLocalDate - Date locale du client au moment du clic (ISO string en UTC)
+   * @param clientTimezoneOffset - Offset UTC du client en minutes (positif si en retard sur UTC)
    */
   async startWeddingDemo(
     weddingEventId: string,
     weddingEventIdToCopyFrom: string,
     clientLocalDate: string,
+    clientTimezoneOffset: number,
   ) {
     logger(`Starting wedding demo for event: ${weddingEventId}`);
+    logger(`Client timezone offset: ${clientTimezoneOffset} minutes`);
 
-    const now = new Date(clientLocalDate);
+    // Convertir la date UTC du client en date locale du client
+    // getTimezoneOffset() retourne un nombre positif si on est en retard sur UTC
+    // Exemple: UTC+2 (Paris en été) = -120 minutes
+    // Donc pour obtenir l'heure locale, on soustrait l'offset
+    const now = new Date(
+      new Date(clientLocalDate).getTime() - clientTimezoneOffset * 60000,
+    );
+
+    logger(`Client local time: ${now.toISOString()}`);
 
     // 1. Reset tous les timers et actions du mariage
     await this.resetWeddingFromNormal(weddingEventId, weddingEventIdToCopyFrom);

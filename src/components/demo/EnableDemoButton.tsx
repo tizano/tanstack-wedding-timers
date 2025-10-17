@@ -6,8 +6,11 @@ import { Button } from "../ui/button";
 
 function EnableDemoButton() {
   const navigate = useNavigate();
-  const clientLocalDate = new Date().toISOString();
+  const now = new Date();
+  const clientLocalDate = now.toISOString();
+  const clientTimezoneOffset = now.getTimezoneOffset(); // Offset en minutes (positif si en retard sur UTC)
   console.log("[ClientDate] -- ", clientLocalDate);
+  console.log("[ClientTimezoneOffset] -- ", clientTimezoneOffset, "minutes");
 
   const { mutate, isPending, isSuccess } = useMutation({
     mutationKey: [MUTATION_KEYS.START_WEDDING_DEMO],
@@ -17,6 +20,7 @@ function EnableDemoButton() {
           weddingEventId: "wedding-event-demo",
           weddingEventIdToCopyFrom: "wedding-event-1",
           clientLocalDate: clientLocalDate,
+          clientTimezoneOffset: clientTimezoneOffset,
         },
       });
     },
