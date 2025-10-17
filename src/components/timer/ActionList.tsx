@@ -12,6 +12,7 @@ type ActionListProps = {
   currentAction: TimerAction | null;
   display: "list" | "grid";
   shouldPulse?: boolean;
+  isTimerCompleted?: boolean;
   markActionAsStarting?: (actionId: string) => void;
   isActionStarting?: (actionId: string) => boolean;
 };
@@ -21,6 +22,7 @@ export default function ActionList({
   currentAction: currentActionFromProps,
   display = "list",
   shouldPulse = false,
+  isTimerCompleted = false,
   markActionAsStarting,
   isActionStarting,
 }: ActionListProps) {
@@ -101,6 +103,7 @@ export default function ActionList({
               currentActionFromProps?.executedAt !== null && shouldPulse && index === 0
             }
             isActionStarting={isActionStarting}
+            isTimerCompleted={isTimerCompleted}
           />
         ))}
       </div>

@@ -96,7 +96,7 @@ function WeddingTimerSection({
               </p>
             </div>
           )} */}
-          <div className="group absolute top-0 right-0 p-4">
+          <div className="group absolute top-0 right-0 z-50 p-4">
             <Button
               onClick={() =>
                 navigate({

@@ -11,6 +11,7 @@ type ActionItemProps = {
   onActionStart?: (action: TimerAction) => void;
   currentAction?: TimerAction | null;
   shouldPulse?: boolean;
+  isTimerCompleted?: boolean;
   isActionStarting?: (actionId: string) => boolean;
 };
 
@@ -19,6 +20,7 @@ const ActionItem = ({
   onActionStart,
   currentAction,
   shouldPulse = false,
+  isTimerCompleted = false,
   isActionStarting,
 }: ActionItemProps) => {
   const isCurrentAction = currentAction?.id === action.id;
@@ -115,17 +117,27 @@ const ActionItem = ({
         "bg-muted/70 flex gap-3 rounded-lg border p-3",
         isCurrentAction && "border-green-500 bg-green-200/50 dark:bg-green-950",
         shouldPulse && "animate-pulse bg-orange-200/50 dark:bg-orange-950",
+        isTimerCompleted && "items-center",
       )}
     >
-      <div className="mt-1">{renderActionIcon(action)}</div>
+      <div className={cn(!isTimerCompleted && "mt-1")}>{renderActionIcon(action)}</div>
       <div className="relative flex-1">
-        <div className="font-medium">{action.contentEn}</div>
-        <div className="text-muted-foreground flex flex-col gap-1 text-sm">
-          <span>
-            {action.type} • {renderActionUrl(action)}
-          </span>
-          {renderTriggerText(action)}
+        <div
+          className={cn(
+            "font-medium",
+            isTimerCompleted && "line-clamp-1 overflow-hidden text-ellipsis",
+          )}
+        >
+          {action.contentEn}
         </div>
+        {!isTimerCompleted && (
+          <div className="text-muted-foreground flex flex-col gap-1 text-sm">
+            <span>
+              {action.type} • {renderActionUrl(action)}
+            </span>
+            {renderTriggerText(action)}
+          </div>
+        )}
       </div>
       <div className="flex flex-col justify-between gap-2">
         {action.status !== "COMPLETED" && (
