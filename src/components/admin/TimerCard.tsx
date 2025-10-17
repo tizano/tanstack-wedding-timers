@@ -97,10 +97,9 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
       if (triggerOffset <= 0) {
         const secondsUntilTrigger = Math.abs(triggerOffset) * 60;
         const totalSecondsLeft = timeLeft.totalSeconds;
-
         // Activer le pulse quand on atteint ou dépasse le moment du trigger
         // Comparer en secondes pour une précision exacte
-        return totalSecondsLeft <= secondsUntilTrigger && timerIsStarted;
+        return totalSecondsLeft <= secondsUntilTrigger && timerData.status === "RUNNING";
       }
 
       return false;
@@ -174,6 +173,9 @@ export default function TimerCard({ timerData, isCurrent, isDemo }: TimerCardPro
           (isPunctualTimer || isManualTimer) &&
           "animate-pulse bg-[#FF3D00] dark:bg-[#E64A19]",
         shouldPulse && isCurrent && "animate-pulse !bg-[#651FFF] dark:!bg-[#304FFE]",
+        shouldPulseForAction &&
+          isCurrent &&
+          "animate-pulse !bg-[#651FFF] dark:!bg-[#304FFE]",
 
         timerIsCompleted &&
           "cursor-not-allowed bg-blue-100/80 opacity-60 dark:bg-blue-950",

@@ -148,7 +148,6 @@ export class TimerService {
     logger(`Total timers to schedule: ${allTimers.length}`);
 
     // 3. Calculer les scheduledStartTime pour chaque timer
-    // Le premier timer commence maintenant + 1.5 minutes
     let currentScheduledTime: Date | null = now;
 
     console.log(
@@ -167,13 +166,8 @@ export class TimerService {
     logger("[Start wedding demo] AFTER fixing scheduled time:");
     console.log(currentScheduledTime);
 
-    if (currentScheduledTime) {
-      currentScheduledTime = new Date(currentScheduledTime.getTime() + 1.5 * 60000);
-    }
-    console.log("Initial now to updatedAt:", currentScheduledTime);
-
-    // Durée custom pour le mode démo en minutes (tous les timers avec durée durent 20min en mode démo)
-    const customDemoDuration = 10;
+    // Durée custom pour le mode démo en minutes (tous les timers avec durée durent 5min en mode démo)
+    const customDemoDuration = 5;
 
     for (let i = 0; i < allTimers.length; i++) {
       const currentTimer = allTimers[i];
@@ -201,11 +195,17 @@ export class TimerService {
           const nextTimerStartTime = currentScheduledTime;
 
           if (nextTimerStartTime) {
-            // Le ponctuel commence au milieu du timer suivant
+            // Le ponctuel commence au milieu du timer suivant sauf pour le dernier timer qui est ponctuel
+
             const punctualOffset = customDemoDuration / 2;
             newScheduledTime = new Date(
               nextTimerStartTime.getTime() + punctualOffset * 60000,
             );
+
+            if (i === 0) {
+              // Le premier timer commence maintenant + 1.5 minutes
+              newScheduledTime = new Date(newScheduledTime.getTime() + 1.5 * 60000);
+            }
           } else {
             // Fallback : utiliser le currentScheduledTime
             newScheduledTime = currentScheduledTime;
