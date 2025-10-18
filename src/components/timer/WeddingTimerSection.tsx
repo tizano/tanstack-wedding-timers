@@ -71,31 +71,8 @@ function WeddingTimerSection({
           )}
           <div className="flex flex-col items-center gap-2 text-gray-200 dark:text-gray-200">
             <PartyPopper className="size-9" />
-            <h1 className="text-4xl font-bold">Tony & Neka</h1>
+            <h1 className="font-parisienne text-6xl">Tony & Neka</h1>
           </div>
-          {/* {currentTimer && isDemo && (
-            <div className="space-y-2 text-center text-gray-200">
-              <h2 className="text-2xl font-semibold">{currentTimer.name}</h2>
-              {currentTimer.scheduledStartTime && (
-                <p className="text-lg">
-                  Programmé pour:{" "}
-                  {formatTimezoneAgnosticDate(currentTimer.scheduledStartTime, {
-                    dateStyle: "short",
-                    timeStyle: "short",
-                  })}
-                </p>
-              )}
-              {currentTimer.durationMinutes != null &&
-                currentTimer.durationMinutes > 0 && (
-                  <p className="text-md opacity-80">
-                    Durée: {currentTimer.durationMinutes} minutes
-                  </p>
-                )}
-              <p className="text-sm opacity-60">
-                Statut: {currentTimer.status || "En attente"}
-              </p>
-            </div>
-          )} */}
           <div className="group absolute top-0 right-0 z-50 p-4">
             <Button
               onClick={() =>

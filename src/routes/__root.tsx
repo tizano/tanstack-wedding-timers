@@ -50,7 +50,7 @@ export const Route = createRootRouteWithContext<{
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Parisienne&display=swap",
       },
       // preload this video casa-de-cha.mp4
       {

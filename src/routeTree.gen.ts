@@ -74,7 +74,7 @@ const authenticatedDashboardTimersTimerIdIndexRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof authenticatedRouteRouteWithChildren
   '/dashboard': typeof authenticatedDashboardRouteRouteWithChildren
   '/login': typeof authPagesLoginRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -84,7 +84,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/timers/$timerId': typeof authenticatedDashboardTimersTimerIdIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/': typeof authenticatedRouteRouteWithChildren
   '/login': typeof authPagesLoginRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/dashboard': typeof authenticatedDashboardIndexRoute
@@ -150,15 +150,15 @@ declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/(authenticated)': {
       id: '/(authenticated)'
-      path: ''
-      fullPath: ''
+      path: '/'
+      fullPath: '/'
       preLoaderRoute: typeof authenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(auth-pages)': {
       id: '/(auth-pages)'
-      path: ''
-      fullPath: ''
+      path: '/'
+      fullPath: '/'
       preLoaderRoute: typeof authPagesRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
