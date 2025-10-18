@@ -237,9 +237,21 @@ export function useTimerWithActions({
       let foundCurrentAction: TimerAction | null = null;
       let foundNextAction: TimerAction | null = null;
       let foundShouldNotifyAction: TimerAction | null = null;
-      let timeToNext = 0;
 
       for (const action of orderedActions) {
+        // Vérifier d'abord si l'action est RUNNING (démarrée manuellement ou automatiquement)
+        // Cela permet de gérer les actions démarrées avant leur heure prévue
+        if (action.status === "RUNNING" && !action.executedAt) {
+          foundCurrentAction = action;
+
+          // Déclencher le callback seulement la première fois
+          if (!triggeredActionsRef.current.has(action.id)) {
+            triggeredActionsRef.current.add(action.id);
+            onActionTriggerRef.current?.(action);
+          }
+          break;
+        }
+
         const actionTriggerTime = calculateActionTriggerTime(
           start,
           durationMinutes,
@@ -249,28 +261,15 @@ export function useTimerWithActions({
 
         if (diffToAction <= 0) {
           // Le temps de l'action est passé
-          if (!action.executedAt) {
-            if (action.status === "RUNNING") {
-              // Action en cours d'exécution
-              foundCurrentAction = action;
-
-              // Déclencher le callback seulement la première fois
-              if (!triggeredActionsRef.current.has(action.id)) {
-                triggeredActionsRef.current.add(action.id);
-                onActionTriggerRef.current?.(action);
-              }
-              break;
-            } else if (action.status === "PENDING") {
-              // Action prête à être déclenchée manuellement
-              foundShouldNotifyAction = action;
-              // Continue pour trouver la nextAction
-            }
+          if (!action.executedAt && action.status === "PENDING") {
+            // Action prête à être déclenchée manuellement
+            foundShouldNotifyAction = action;
+            // Continue pour trouver la nextAction
           }
         } else {
           // Première action future non exécutée
           if (!action.executedAt && action.status === "PENDING") {
             foundNextAction = action;
-            timeToNext = Math.floor(diffToAction / 1000);
           }
           break;
         }

@@ -210,6 +210,21 @@ export function useTimerWithPusher({
       let foundShouldNotifyAction: TimerAction | null = null;
 
       for (const action of orderedActions) {
+        // Vérifier d'abord si l'action est RUNNING (démarrée manuellement ou automatiquement)
+        // Cela permet de gérer les actions démarrées avant leur heure prévue
+        if (action.status === "RUNNING" && !action.executedAt) {
+          foundCurrentAction = action;
+
+          if (!triggeredActionsRef.current.has(action.id)) {
+            triggeredActionsRef.current.add(action.id);
+            if (displayLog) {
+              console.log("🎯 Déclenchement callback pour action:", action.title);
+            }
+            onActionTriggerRef.current?.(action);
+          }
+          break;
+        }
+
         const actionTriggerTime = calculateActionTriggerTime(
           start,
           durationMinutes,
@@ -218,23 +233,13 @@ export function useTimerWithPusher({
         const diffToAction = actionTriggerTime.getTime() - now.getTime();
 
         if (diffToAction <= 0) {
-          if (!action.executedAt) {
-            if (action.status === "RUNNING") {
-              foundCurrentAction = action;
-
-              if (!triggeredActionsRef.current.has(action.id)) {
-                triggeredActionsRef.current.add(action.id);
-                if (displayLog) {
-                  console.log("🎯 Déclenchement callback pour action:", action.title);
-                }
-                onActionTriggerRef.current?.(action);
-              }
-              break;
-            } else if (action.status === "PENDING") {
-              foundShouldNotifyAction = action;
-            }
+          // Le temps de l'action est passé
+          if (!action.executedAt && action.status === "PENDING") {
+            // Action prête à être déclenchée
+            foundShouldNotifyAction = action;
           }
         } else {
+          // Actions futures
           if (!action.executedAt && action.status === "PENDING") {
             foundNextAction = action;
           }

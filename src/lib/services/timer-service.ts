@@ -150,11 +150,6 @@ export class TimerService {
     // 3. Calculer les scheduledStartTime pour chaque timer
     let currentScheduledTime: Date | null = now;
 
-    console.log(
-      "[Start wedding demo] Initial scheduled time BEFORE fixing:",
-      currentScheduledTime,
-    );
-
     // really dirty hack to fix scheduled time in demo mode
     if (env.VITE_BASE_URL.includes("localhost")) {
       currentScheduledTime = convertToTimezoneAgnosticDate(now);
@@ -162,9 +157,6 @@ export class TimerService {
       // remove the utc offset to have the local time
       currentScheduledTime = new Date(now.getTime() - clientTimezoneOffset * 60000);
     }
-
-    logger("[Start wedding demo] AFTER fixing scheduled time:");
-    console.log(currentScheduledTime);
 
     // Durée custom pour le mode démo en minutes (tous les timers avec durée durent 5min en mode démo)
     const customDemoDuration = 5;
@@ -217,8 +209,6 @@ export class TimerService {
         // Le currentScheduledTime ne change pas pour les timers ponctuels
       } else if (hasDuration) {
         // Timer avec durée : utiliser le currentScheduledTime calculé
-        console.log(currentScheduledTime);
-
         newScheduledTime = currentScheduledTime;
 
         // Calculer le scheduledStartTime du prochain timer avec durée en ajoutant la durée + l'espacement
