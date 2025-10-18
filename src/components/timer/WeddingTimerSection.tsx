@@ -71,7 +71,7 @@ function WeddingTimerSection({
           )}
           <div className="flex flex-col items-center gap-2 text-gray-200 dark:text-gray-200">
             <PartyPopper className="size-9" />
-            <h1 className="font-parisienne text-6xl">Tony & Neka</h1>
+            <h1 className="font-parisienne text-6xl">Neka & Tony</h1>
           </div>
           <div className="group absolute top-0 right-0 z-50 p-4">
             <Button

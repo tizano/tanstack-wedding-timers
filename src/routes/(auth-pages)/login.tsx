@@ -62,7 +62,7 @@ function LoginForm() {
                 <PartyPopper className="size-9" />
               </div>
             </a>
-            <h1 className="font-parisienne mb-4 text-6xl">Tony & Neka</h1>
+            <h1 className="font-parisienne mb-4 text-6xl">Neka & Tony</h1>
             <h2 className="text-xl font-bold">Wedding timers</h2>
           </div>
           <div className="flex flex-col gap-5">
