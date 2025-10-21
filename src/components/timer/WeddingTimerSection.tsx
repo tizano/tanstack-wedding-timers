@@ -87,6 +87,19 @@ function WeddingTimerSection({
               Go to dashboard
             </Button>
           </div>
+          <div className="group absolute right-0 bottom-0 z-50 p-4">
+            <Button
+              onClick={() =>
+                navigate({
+                  to: "/quiz",
+                })
+              }
+              size={"lg"}
+              className="translate-x-[calc(100%+2rem)] cursor-pointer transition-transform group-hover:translate-x-0"
+            >
+              Go to the quiz
+            </Button>
+          </div>
           {currentTimer && (
             <div className="text-gray-100">
               <TimerDisplay timerData={currentTimer} isDemo={isDemo} variant="large" />
