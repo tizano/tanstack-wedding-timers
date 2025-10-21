@@ -17,6 +17,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --breakpoint-wide: 2000px;
+
   --font-montserrat: var(--font-montserrat-sans);
   --font-montserrat-mono: var(--font-montserrat-mono);
   --font-parisienne: var(--font-parisienne);

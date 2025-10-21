@@ -1,11 +1,15 @@
+import { cn } from "@/lib/utils";
+
 const ContentAction = ({
   content,
   lang,
   flagPosition,
+  variant = "default",
 }: {
   content: string;
   lang: "fr" | "en" | "br";
   flagPosition: "left" | "right";
+  variant?: "default" | "big";
 }) => {
   const positionVariants = {
     left: "-left-6",
@@ -17,7 +21,13 @@ const ContentAction = ({
       <div className={`absolute ${positionVariants[flagPosition]} -top-6`}>
         <img src={`/assets/flags/${lang}.png`} alt={lang} width={64} height={64} />
       </div>
-      <h2 className="text-3xl">{content}</h2>
+      <h2
+        className={cn(
+          variant === "big" ? "wide:text-6xl text-5xl leading-snug" : "text-3xl",
+        )}
+      >
+        {content}
+      </h2>
     </div>
   );
 };

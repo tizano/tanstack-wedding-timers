@@ -1,6 +1,6 @@
+import ContentAction from "@/components/timer/actions/ContentAction";
 import { Button } from "@/components/ui/button";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { MonitorPlay } from "lucide-react";
 
 export const Route = createFileRoute("/quiz")({
   component: RouteComponent,
@@ -21,15 +21,39 @@ function RouteComponent() {
           id="background-video"
         ></video>
         <div className="absolute top-0 left-0 z-10 h-full w-full bg-black/70"></div>
+        <>
+          <div className="wide:max-w-1/3 absolute top-16 left-16 z-20 w-full 2xl:max-w-[30%]">
+            <ContentAction
+              variant="big"
+              content="Each table representative must connect to the quiz"
+              lang="en"
+              flagPosition="left"
+            />
+          </div>
+          <div className="wide:max-w-1/3 absolute top-16 right-16 z-20 w-full 2xl:max-w-[30%]">
+            <ContentAction
+              variant="big"
+              content="Cada representante de mesa deve se conectar ao quiz"
+              lang="br"
+              flagPosition="right"
+            />
+          </div>
+          <div className="wide:max-w-1/3 absolute bottom-16 left-16 z-20 w-full 2xl:max-w-[30%]">
+            <ContentAction
+              variant="big"
+              content="Chaque représentant de table doit se connecter au quiz"
+              lang="fr"
+              flagPosition="left"
+            />
+          </div>
+        </>
         <div className="relative z-20 flex h-screen flex-col items-center justify-center gap-8">
           <div className="flex flex-col items-center gap-2 text-gray-200 dark:text-gray-200">
-            <MonitorPlay className="size-12" />
-            <h1 className="text-8xl">Join the quiz</h1>
-            <div className="mt-8 max-w-lg">
-              <img src="/assets/qrcode/qr-code.png" alt="" />
+            <div className="wide:max-w-2xl mt-8 max-w-md">
+              <img className="block w-full" src="/assets/qrcode/qr-code.png" alt="" />
             </div>
           </div>
-          <div className="group absolute top-0 right-0 z-50 p-4">
+          <div className="group absolute right-0 bottom-0 z-50 p-4">
             <Button
               onClick={() =>
                 navigate({
