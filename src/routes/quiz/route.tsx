@@ -50,7 +50,11 @@ function RouteComponent() {
         <div className="relative z-20 flex h-screen flex-col items-center justify-center gap-8">
           <div className="flex flex-col items-center gap-2 text-gray-200 dark:text-gray-200">
             <div className="wide:max-w-2xl mt-8 max-w-md">
-              <img className="block w-full" src="/assets/qrcode/qr-code.png" alt="" />
+              <img
+                className="block w-full"
+                src="/assets/qrcode/quiz-qr-code.png"
+                alt=""
+              />
             </div>
           </div>
           <div className="group absolute right-0 bottom-0 z-50 p-4">
