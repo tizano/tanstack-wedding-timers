@@ -147,7 +147,7 @@ const TimerDisplay = ({
     (firstAction.contentFr || firstAction.contentEn || firstAction.contentBr);
 
   return (
-    <div className="space-y-6">
+    <div className="">
       <div className="text-center">
         {isDemo && (
           <div>

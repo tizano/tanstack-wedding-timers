@@ -43,7 +43,7 @@ const SoundAction = ({ action, onMediaComplete }: SoundActionProps) => {
   }, [playbackSpeed]);
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex h-0 flex-col items-center gap-4">
       <audio
         ref={audioRef}
         src={url || ""}

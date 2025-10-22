@@ -22,25 +22,25 @@ function RouteComponent() {
         ></video>
         <div className="absolute top-0 left-0 z-10 h-full w-full bg-black/70"></div>
         <>
-          <div className="wide:max-w-1/3 absolute top-16 left-16 z-20 w-full 2xl:max-w-[30%]">
+          <div className="wide:max-w-1/3 absolute top-16 left-16 z-20 w-full md:max-w-[27%] 2xl:max-w-[30%]">
             <ContentAction
-              variant="big"
+              variant="small"
               content="Each table representative must connect to the quiz"
               lang="en"
               flagPosition="left"
             />
           </div>
-          <div className="wide:max-w-1/3 absolute top-16 right-16 z-20 w-full 2xl:max-w-[30%]">
+          <div className="wide:max-w-1/3 absolute top-16 right-16 z-20 w-full md:max-w-[27%] 2xl:max-w-[30%]">
             <ContentAction
-              variant="big"
+              variant="small"
               content="Cada representante de mesa deve se conectar ao quiz"
               lang="br"
               flagPosition="right"
             />
           </div>
-          <div className="wide:max-w-1/3 absolute bottom-16 left-16 z-20 w-full 2xl:max-w-[30%]">
+          <div className="wide:max-w-1/3 absolute bottom-16 left-16 z-20 w-full md:max-w-[27%] 2xl:max-w-[30%]">
             <ContentAction
-              variant="big"
+              variant="small"
               content="Chaque représentant de table doit se connecter au quiz"
               lang="fr"
               flagPosition="left"
@@ -49,7 +49,7 @@ function RouteComponent() {
         </>
         <div className="relative z-20 flex h-screen flex-col items-center justify-center gap-8">
           <div className="flex flex-col items-center gap-2 text-gray-200 dark:text-gray-200">
-            <div className="wide:max-w-2xl mt-8 max-w-md">
+            <div className="wide:max-w-2xl mt-8 max-w-md md:max-w-[27%]">
               <img
                 className="block w-full"
                 src="/assets/qrcode/quiz-qr-code.png"

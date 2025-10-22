@@ -72,7 +72,7 @@ const ImageWithSound = ({ action, onMediaComplete }: ImageWithSoundActionProps) 
           autoPlay
           controls
           onEnded={handleAudioEnd}
-          className="w-full max-w-md opacity-0"
+          className="h-0 w-full max-w-md opacity-0"
         />
       )}
     </div>

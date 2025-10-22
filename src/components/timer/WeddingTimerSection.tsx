@@ -1,7 +1,6 @@
 import { usePlaybackSpeed } from "@/lib/context/PlaybackSpeedContext";
 import { TimerWithActions } from "@/lib/types/timer.type";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { PartyPopper } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../ui/button";
 import TimerDisplay from "./TimerDisplay";
@@ -45,7 +44,7 @@ function WeddingTimerSection({
           id="background-video"
         ></video>
         <div className="absolute top-0 left-0 z-10 h-full w-full bg-black/70"></div>
-        <div className="relative z-20 flex h-screen flex-col items-center justify-center gap-8">
+        <div className="relative z-20 flex h-screen flex-col items-center justify-center gap-2">
           {!isClicked && (
             <Button onClick={() => setIsClicked(true)} variant="destructive">
               Click me to enable video sound
@@ -70,8 +69,7 @@ function WeddingTimerSection({
             </div>
           )}
           <div className="flex flex-col items-center gap-2 text-gray-200 dark:text-gray-200">
-            <PartyPopper className="size-9" />
-            <h1 className="font-parisienne text-6xl">Neka & Tony</h1>
+            <h1 className="font-parisienne text-5xl">Neka & Tony</h1>
           </div>
           <div className="group absolute top-0 right-0 z-50 p-4">
             <Button

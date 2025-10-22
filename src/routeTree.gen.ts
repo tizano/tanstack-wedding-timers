@@ -80,7 +80,7 @@ const authenticatedDashboardTimersTimerIdIndexRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof authenticatedRouteRouteWithChildren
   '/quiz': typeof QuizRouteRoute
   '/dashboard': typeof authenticatedDashboardRouteRouteWithChildren
   '/login': typeof authPagesLoginRoute
@@ -91,7 +91,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/timers/$timerId': typeof authenticatedDashboardTimersTimerIdIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/': typeof authenticatedRouteRouteWithChildren
   '/quiz': typeof QuizRouteRoute
   '/login': typeof authPagesLoginRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -170,15 +170,15 @@ declare module '@tanstack/react-router' {
     }
     '/(authenticated)': {
       id: '/(authenticated)'
-      path: ''
-      fullPath: ''
+      path: '/'
+      fullPath: '/'
       preLoaderRoute: typeof authenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(auth-pages)': {
       id: '/(auth-pages)'
-      path: ''
-      fullPath: ''
+      path: '/'
+      fullPath: '/'
       preLoaderRoute: typeof authPagesRouteRouteImport
       parentRoute: typeof rootRouteImport
     }

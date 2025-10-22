@@ -330,13 +330,14 @@ const ActionDisplay = ({
           {showMediaContent && (
             <div
               className={cn(
-                "absolute inset-0 flex h-screen w-screen flex-col items-center justify-center gap-12",
+                "absolute inset-0 flex h-screen w-screen flex-col items-center justify-center",
                 currentAction.type === "SOUND" && "pointer-events-none",
+                shouldShowMiniTimer ? "gap-6" : "gap-10",
               )}
             >
               {shouldShowMiniTimer && (
                 <div className="text-gray-100">
-                  <TimerCountdown timeLeft={timeLeft} variant="large" />
+                  <TimerCountdown timeLeft={timeLeft} variant="small" />
                 </div>
               )}
               {renderMediaContent()}
